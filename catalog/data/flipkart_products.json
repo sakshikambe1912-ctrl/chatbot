@@ -1,0 +1,506 @@
+{
+  "store_name": "Flipkart",
+  "currency": "INR",
+  "products": [
+    {
+      "external_id": "FK-SHOE-001",
+      "name": "Nike Revolution 6 Running Shoes For Men (Black)",
+      "description": "Nike Revolution 6 Next Nature road running shoes for men. Features plush foam midsole for a soft smooth ride, breathable lightweight mesh upper in black colour, rubber outsole with generative traction pattern for running and gym workouts.",
+      "category": "Shoes",
+      "price": 1799.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/nike-revolution-6-running-shoes-men/p/itmfc101",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/1/8/p/-original-imaghvb5m7bkgfzg.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-002",
+      "name": "Nike Downshifter 12 Road Running Shoes For Men (Grey/White)",
+      "description": "Nike Downshifter 12 lightweight road running shoes for men. Features midfoot fitband support, breathable mesh, durable rubber traction outsole, and soft foam underfoot cushioning.",
+      "category": "Shoes",
+      "price": 2499.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/nike-downshifter-12-running-shoes-men/p/itmfc102",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/c/u/f/-original-imagthq48e78uuxr.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-003",
+      "name": "Nike Air Zoom Pegasus 40 Running Shoes For Men (Racer Blue)",
+      "description": "Nike Air Zoom Pegasus 40 premium responsive running shoes. Dual Zoom Air units, engineered single-layer mesh upper, black and racer blue accents, durable waffle-inspired outsole.",
+      "category": "Shoes",
+      "price": 8995.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/nike-air-zoom-pegasus-40-running-shoes/p/itmfc103",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/d/m/z/-original-imags37kfhzt8h8s.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-004",
+      "name": "Nike Quest 5 Road Running Shoes For Men (Black)",
+      "description": "Nike Quest 5 road running shoes for men. Soft foam cushioning, black engineered mesh upper, lightweight and durable rubber sole.",
+      "category": "Shoes",
+      "price": 3695.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/nike-quest-5-running-shoes/p/itmfc104",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/y/s/x/-original-imagrg4yzkgyd27y.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-005",
+      "name": "Campus Oxyfit Running Shoes For Men (Black/Red)",
+      "description": "Campus Oxyfit stylish running shoes for men. Memory tech insole, breathable knitted vamp, black colour with red accents, durable anti-slip EVA sole.",
+      "category": "Shoes",
+      "price": 899.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/campus-oxyfit-running-shoes-men/p/itmfc105",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/s/w/q/-original-imagg4yhhg94pwh4.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-006",
+      "name": "Campus North PLUS Running Shoes For Men (Grey/Orange)",
+      "description": "Campus North PLUS sports running shoes for men. High rebound phylon sole, breathable mesh upper, grey and vibrant orange, perfect for running, jogging, and gym.",
+      "category": "Shoes",
+      "price": 1299.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/campus-north-plus-running-shoes/p/itmfc106",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/8/i/c/-original-imagm7f3hygq7n3w.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-007",
+      "name": "Puma Flyer Runner Mesh Running Shoes For Men (Black/White)",
+      "description": "Puma Flyer Runner lightweight running shoes. SoftFoam+ comfort sockliner for instant step-in cushioning, cushioned EVA midsole, classic black mesh upper.",
+      "category": "Shoes",
+      "price": 1899.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/puma-flyer-runner-running-shoes-men/p/itmfc107",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/c/k/k/-original-imagfyg5qngzhgz9.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-008",
+      "name": "Puma Softride Enzo Evo Running Shoes For Men (Navy Blue)",
+      "description": "Puma Softride Enzo Evo running shoes. Softride EVA technology for extreme cushioning and all-day comfort, progressive TPU cage styling, navy blue.",
+      "category": "Shoes",
+      "price": 2799.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/puma-softride-enzo-evo-running-shoes/p/itmfc108",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/j/z/n/-original-imags37k9y5fhgbp.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-009",
+      "name": "Asian Wonderian-13 Sports Running Shoes For Men (Black)",
+      "description": "Asian Wonderian-13 lightweight running and walking shoes. Air-cushion technology, flexible bounce sole, breathable black mesh upper, highly affordable.",
+      "category": "Shoes",
+      "price": 649.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/asian-wonderian-13-running-shoes/p/itmfc109",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/m/m/k/-original-imaghr69cfzgh7hz.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-010",
+      "name": "Asian Tarzan-11 Running Shoes For Men (Grey)",
+      "description": "Asian Tarzan-11 comfortable running shoes for men. Breathable flyknit upper, anti-skid rubber sole, light grey sporty finish.",
+      "category": "Shoes",
+      "price": 799.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/asian-tarzan-11-running-shoes/p/itmfc110",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/p/e/b/-original-imagky9hyzhyzghw.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-011",
+      "name": "Sparx SM-648 Running Shoes For Men (Black/Red)",
+      "description": "Sparx SM-648 athletic running shoes. Mesh upper for airflow, cushioned footbed, black with sporty red highlights, durable rubber sole.",
+      "category": "Shoes",
+      "price": 949.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/sparx-sm-648-running-shoes/p/itmfc111",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/7/2/m/-original-imagsfdvubrk2xph.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-012",
+      "name": "Sparx SM-734 Walking & Running Shoes For Men (Royal Blue)",
+      "description": "Sparx SM-734 running shoes for daily workouts and jogging. EVA sole for shock absorption, durable upper in royal blue.",
+      "category": "Shoes",
+      "price": 1149.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/sparx-sm-734-running-shoes/p/itmfc112",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/e/t/b/-original-imags37kxv5ghhgt.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-013",
+      "name": "Adidas Pureboost 22 Running Shoes For Men (Core Black)",
+      "description": "Adidas Pureboost 22 high-performance running shoes. Full-length BOOST midsole for ultimate energy return, Stretchweb rubber outsole, core black.",
+      "category": "Shoes",
+      "price": 5499.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/adidas-pureboost-22-running-shoes/p/itmfc113",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/w/t/q/-original-imagg9vhhyhhghzt.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-014",
+      "name": "Adidas Coreracer Running Shoes For Men (Black)",
+      "description": "Adidas Coreracer lightweight running shoes. Breathable textile upper, EVA midsole cushioning, black with white 3-stripes, rubber outsole.",
+      "category": "Shoes",
+      "price": 1999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/adidas-coreracer-running-shoes/p/itmfc114",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/g/c/u/-original-imagg9vhghyhhgff.jpeg"
+    },
+    {
+      "external_id": "FK-SHOE-015",
+      "name": "Nike Air Max SC Running & Casual Shoes (White/Black)",
+      "description": "Nike Air Max SC heritage running shoes. Visible Air cushioning, leather and mesh upper, currently out of stock.",
+      "category": "Shoes",
+      "price": 4199.0,
+      "in_stock": false,
+      "url": "https://www.flipkart.com/nike-air-max-sc-shoes/p/itmfc115",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shoe/6/3/b/-original-imagg9vhvyhhgfgz.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-001",
+      "name": "Apple iPhone 15 (Black, 128 GB)",
+      "description": "Apple iPhone 15 smartphone with Dynamic Island, 48MP main camera with 2x Telephoto, A16 Bionic chip, 6.1-inch Super Retina XDR display, USB-C connectivity, 128 GB ROM.",
+      "category": "Mobiles",
+      "price": 65999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/apple-iphone-15-black-128-gb/p/itm6ac6485515ae4",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/h/d/9/-original-imagtc2qzgnnuhxh.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-002",
+      "name": "Apple iPhone 13 (Midnight, 128 GB)",
+      "description": "Apple iPhone 13 in Midnight black finish. 128 GB storage, 6.1-inch Super Retina XDR display, A15 Bionic chip with 4-core GPU, advanced dual-camera system with Cinematic mode.",
+      "category": "Mobiles",
+      "price": 48999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/apple-iphone-13-midnight-128-gb/p/itmca361a0d71edb",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/kgi proliferate/-original-imafvf73zzhhpvzp.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-003",
+      "name": "Samsung Galaxy S23 5G (Phantom Black, 128 GB, 8 GB RAM)",
+      "description": "Samsung Galaxy S23 5G flagship smartphone. Snapdragon 8 Gen 2 processor, 50MP triple camera with Nightography, 120Hz Dynamic AMOLED 2X display, 8 GB RAM, 128 GB storage, Phantom Black.",
+      "category": "Mobiles",
+      "price": 44999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/samsung-galaxy-s23-5g-phantom-black-128-gb/p/itme393273e970b1",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/y/7/f/-original-imagtkzpzzyghwhf.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-004",
+      "name": "Samsung Galaxy M14 5G (Smoky Teal, 128 GB, 6 GB RAM)",
+      "description": "Samsung Galaxy M14 5G smartphone. 6000 mAh mega battery, 50MP triple camera, 5nm Exynos 1330 processor, 6 GB RAM, 128 GB storage, Full HD+ 90Hz display.",
+      "category": "Mobiles",
+      "price": 11999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/samsung-galaxy-m14-5g-smoky-teal-128-gb/p/itma690460d3fc3c",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/8/f/r/-original-imagpgg9pggghhwt.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-005",
+      "name": "OnePlus 12R 5G (Cool Blue, 256 GB, 16 GB RAM)",
+      "description": "OnePlus 12R 5G flagship smartphone with Snapdragon 8 Gen 2 processor, 16 GB LPDDR5X RAM, 256 GB UFS 3.1 storage, 100W SUPERVOOC fast charging, 5500 mAh battery, 120Hz ProXDR display.",
+      "category": "Mobiles",
+      "price": 42999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/oneplus-12r-cool-blue-256-gb/p/itmd59214d0f7a22",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/b/u/5/-original-imagy4bggyyhhdyt.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-006",
+      "name": "OnePlus Nord CE 3 Lite 5G (Pastel Lime, 128 GB, 8 GB RAM)",
+      "description": "OnePlus Nord CE 3 Lite 5G smartphone. 108MP camera, 67W SUPERVOOC fast charging, Qualcomm Snapdragon 695 5G processor, 8 GB RAM, 128 GB storage, 120Hz FHD+ display, Pastel Lime.",
+      "category": "Mobiles",
+      "price": 17499.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/oneplus-nord-ce-3-lite-5g-pastel-lime-128-gb/p/itmf8736d7a46f77",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/k/w/k/-original-imagu4h5hghzhhwt.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-007",
+      "name": "Realme 12 Pro 5G (Submarine Blue, 256 GB, 8 GB RAM)",
+      "description": "Realme 12 Pro 5G with Sony IMX882 OIS portrait camera, luxury watch design, Snapdragon 6 Gen 1 chipset, 8 GB RAM, 256 GB storage, 120Hz curved AMOLED display, Submarine Blue.",
+      "category": "Mobiles",
+      "price": 23999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/realme-12-pro-5g-submarine-blue-256-gb/p/itm54746f338d172",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/l/x/c/-original-imagx9pfghhghwtz.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-008",
+      "name": "Realme Narzo 60 5G (Cosmic Black, 128 GB, 8 GB RAM)",
+      "description": "Realme Narzo 60 5G smartphone with 90Hz Super AMOLED display, 64MP street photography camera, Dimensity 6020 5G chip, 8 GB RAM, 128 GB storage, Cosmic Black.",
+      "category": "Mobiles",
+      "price": 14999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/realme-narzo-60-5g-cosmic-black-128-gb/p/itmd64817a351ee6",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/i/t/h/-original-imagrwzfgzhzgytg.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-009",
+      "name": "Redmi Note 13 Pro 5G (Midnight Black, 128 GB, 8 GB RAM)",
+      "description": "Xiaomi Redmi Note 13 Pro 5G smartphone. 200MP ultra-clear camera with OIS, 1.5K 120Hz AMOLED display, Snapdragon 7s Gen 2, 8 GB RAM, 128 GB storage, 67W turbo charge.",
+      "category": "Mobiles",
+      "price": 21999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/redmi-note-13-pro-5g-midnight-black-128-gb/p/itm3d790f9715502",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/t/p/c/-original-imagwt5fgzhygyrf.jpeg"
+    },
+    {
+      "external_id": "FK-MOB-010",
+      "name": "POCO X6 Pro 5G (Racing Yellow, 512 GB, 12 GB RAM)",
+      "description": "POCO X6 Pro 5G gaming smartphone. MediaTek Dimensity 8300-Ultra processor, 12 GB RAM, 512 GB storage, 64MP triple camera with OIS, 1.5K AMOLED 120Hz display, Racing Yellow vegan leather back.",
+      "category": "Mobiles",
+      "price": 26999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/poco-x6-pro-5g-racing-yellow-512-gb/p/itmeff4099480f2d",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mobile/0/h/k/-original-imagx9pfkkhghwtz.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-001",
+      "name": "HP 15s Intel Core i5 12th Gen (16 GB RAM / 512 GB SSD / Windows 11)",
+      "description": "HP 15s-fq5329TU thin and light laptop. 12th Gen Intel Core i5-1235U processor, 16 GB DDR4 RAM, 512 GB PCIe NVMe M.2 SSD, 15.6-inch FHD micro-edge anti-glare display, Intel Iris Xe graphics, Windows 11 Home, MS Office, Natural Silver.",
+      "category": "Laptops",
+      "price": 52990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/hp-15s-intel-core-i5-12th-gen-16-gb-512-gb-ssd/p/itm5347ffc49e7cf",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/u/l/k/-original-imagt5kphgghwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-002",
+      "name": "HP 14s Intel Core i3 11th Gen (8 GB RAM / 512 GB SSD / Windows 11)",
+      "description": "HP 14s thin laptop for students and everyday work. 11th Gen Intel Core i3-1115G4, 8 GB RAM, 512 GB SSD, 14-inch FHD IPS display, Windows 11 Home, Jet Black.",
+      "category": "Laptops",
+      "price": 36990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/hp-14s-intel-core-i3-11th-gen-8-gb-512-gb-ssd/p/itm87a552bfd1c4f",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/2/v/v/-original-imagfdf45zhzhwtz.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-003",
+      "name": "Lenovo IdeaPad Slim 3 Intel Core i3 12th Gen (8 GB RAM / 512 GB SSD)",
+      "description": "Lenovo IdeaPad Slim 3 lightweight notebook. 12th Gen Intel Core i3-1215U, 8 GB RAM, 512 GB SSD, 15.6-inch FHD anti-glare display, Windows 11 Home, Arctic Grey.",
+      "category": "Laptops",
+      "price": 34990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/lenovo-ideapad-slim-3-intel-core-i3-12th-gen/p/itmd5b2cbefdf55a",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/m/b/n/-original-imagq9pfghhghwtz.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-004",
+      "name": "Lenovo IdeaPad Gaming 3 AMD Ryzen 5 (16 GB RAM / 512 GB SSD / RTX 3050)",
+      "description": "Lenovo IdeaPad Gaming 3 powerful gaming laptop. AMD Ryzen 5 5600H processor, 16 GB RAM, 512 GB SSD, NVIDIA GeForce RTX 3050 4GB GPU, 15.6-inch FHD 120Hz display, Onyx Grey.",
+      "category": "Laptops",
+      "price": 49990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/lenovo-ideapad-gaming-3-amd-ryzen-5-16-gb-512-gb-ssd-rtx-3050/p/itm09403fe7e61da",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/k/w/b/-original-imagp8b5yghhwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-005",
+      "name": "Dell Inspiron 3520 Intel Core i5 12th Gen (16 GB RAM / 512 GB SSD)",
+      "description": "Dell Inspiron 3520 laptop for professionals and multitaskers. 12th Gen Intel Core i5-1235U, 16 GB RAM, 512 GB SSD, 15.6-inch FHD 120Hz display, Windows 11, Carbon Black.",
+      "category": "Laptops",
+      "price": 48490.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/dell-inspiron-3520-intel-core-i5-12th-gen-16-gb-512-gb-ssd/p/itm8491873fcbfd9",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/p/v/s/-original-imagm9pfgzhzghwt.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-006",
+      "name": "Dell Inspiron 15 Intel Core i3 12th Gen (8 GB RAM / 512 GB SSD)",
+      "description": "Dell Inspiron 15 laptop. 12th Gen Intel Core i3-1215U processor, 8 GB RAM, 512 GB SSD storage, 15.6-inch FHD display, Windows 11, Platinum Silver.",
+      "category": "Laptops",
+      "price": 37990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/dell-inspiron-15-intel-core-i3-12th-gen/p/itmd0f6fb6da3960",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/o/t/e/-original-imagv9pfghhghwtz.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-007",
+      "name": "ASUS Vivobook 15 Intel Core i5 12th Gen (16 GB RAM / 512 GB SSD)",
+      "description": "ASUS Vivobook 15 thin and light laptop. Intel Core i5-1235U, 16 GB RAM, 512 GB NVMe SSD, 15.6-inch FHD anti-glare display, fingerprint sensor, Quiet Blue.",
+      "category": "Laptops",
+      "price": 47990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/asus-vivobook-15-intel-core-i5-12th-gen-16-gb-512-gb-ssd/p/itm2849c3b88b0a1",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/q/e/1/-original-imagf8b5hghzhwzt.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-008",
+      "name": "ASUS TUF Gaming F15 Intel Core i7 12th Gen (16 GB RAM / 512 GB SSD / RTX 4060)",
+      "description": "ASUS TUF Gaming F15 high-end gaming laptop. 12th Gen Intel Core i7-12700H, 16 GB DDR4 RAM, 512 GB SSD, NVIDIA GeForce RTX 4060 8GB graphics, 144Hz FHD display, Mecha Gray.",
+      "category": "Laptops",
+      "price": 79990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/asus-tuf-gaming-f15-intel-core-i7-12th-gen/p/itmfc408",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/0/a/y/-original-imagw8b5yghhwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-009",
+      "name": "Apple MacBook Air Apple M2 Chip (8 GB RAM / 256 GB SSD)",
+      "description": "Apple MacBook Air with M2 chip. 8-core CPU, 8-core GPU, 8 GB unified memory, 256 GB SSD storage, 13.6-inch Liquid Retina display, 1080p FaceTime HD camera, MagSafe 3 charging, Space Grey.",
+      "category": "Laptops",
+      "price": 89990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/apple-macbook-air-m2-8-gb-256-gb-ssd/p/itm0a273e35186b2",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/2/v/v/-original-imagfdf43vvbky5v.jpeg"
+    },
+    {
+      "external_id": "FK-LAP-010",
+      "name": "Acer Aspire 5 Intel Core i5 13th Gen (16 GB RAM / 512 GB SSD)",
+      "description": "Acer Aspire 5 high productivity laptop. 13th Gen Intel Core i5-1335U, 16 GB DDR4 RAM, 512 GB SSD, 15.6-inch Full HD IPS display, Steel Gray.",
+      "category": "Laptops",
+      "price": 49990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/acer-aspire-5-intel-core-i5-13th-gen/p/itmd5b2cbefdf55a",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/computer/f/c/z/-original-imagy8b5yghhwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-AUD-001",
+      "name": "boAt Rockerz 450 Bluetooth Headset (Luscious Black)",
+      "description": "boAt Rockerz 450 on-ear wireless headphones with 40mm dynamic drivers, up to 15 hours playback, plush padded ear cushions, dual modes (Bluetooth and AUX), luscious black.",
+      "category": "Audio",
+      "price": 1299.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/boat-rockerz-450-bluetooth-headset/p/itm5439bf1e612cb",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/6/c/9/-original-imagg9vhgyzhhyzt.jpeg"
+    },
+    {
+      "external_id": "FK-AUD-002",
+      "name": "boAt Airdopes 141 True Wireless Earbuds (Bold Black)",
+      "description": "boAt Airdopes 141 TWS earbuds with up to 42 hours total playback, ENx environmental noise cancellation for crystal calls, 8mm drivers, ASAP fast charge, IPX4 water resistance, bold black.",
+      "category": "Audio",
+      "price": 999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/boat-airdopes-141-true-wireless-earbuds/p/itm8734918e770b1",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/p/r/z/-original-imagm8b5yghhwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-AUD-003",
+      "name": "Sony WH-1000XM5 Wireless Noise Cancelling Headphones (Black)",
+      "description": "Sony WH-1000XM5 industry leading active noise cancelling wireless headphones. Two processors control 8 microphones, Auto NC Optimizer, 30-hour battery, crystal clear hands-free calling, black.",
+      "category": "Audio",
+      "price": 26990.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/sony-wh-1000xm5-wireless-headphone/p/itmd5b2cbefdf55a",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/d/h/v/-original-imagq9pfghhghwtz.jpeg"
+    },
+    {
+      "external_id": "FK-AUD-004",
+      "name": "Apple AirPods Pro (2nd Generation) with MagSafe Case (USB-C)",
+      "description": "Apple AirPods Pro (2nd generation) with H2 chip, up to 2x more Active Noise Cancellation, Adaptive Audio, Personalized Spatial Audio with dynamic head tracking, USB-C case.",
+      "category": "Audio",
+      "price": 19999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/apple-airpods-pro-2nd-generation/p/itmd0f6fb6da3960",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/headphone/e/a/f/-original-imagtc272qgbgnth.jpeg"
+    },
+    {
+      "external_id": "FK-AUD-005",
+      "name": "JBL Flip 6 20W Portable Bluetooth Speaker (Black)",
+      "description": "JBL Flip 6 waterproof portable speaker with 2-way speaker system, dual passive radiators, 12 hours playtime, IP67 waterproof and dustproof, bold sound.",
+      "category": "Audio",
+      "price": 8999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/jbl-flip-6-portable-bluetooth-speaker/p/itmfc505",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/speaker/w/m/e/-original-imagfyg5qngzhgz9.jpeg"
+    },
+    {
+      "external_id": "FK-WEAR-001",
+      "name": "Noise ColorFit Pulse 2 Max 1.85'' Display Bluetooth Calling Smartwatch (Jet Black)",
+      "description": "Noise ColorFit Pulse 2 Max smartwatch with 1.85-inch bright TFT LCD, Bluetooth calling, 550 nits brightness, 100 sports modes, heart rate and SpO2 tracking, 10-day battery, jet black.",
+      "category": "Wearables",
+      "price": 1499.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/noise-colorfit-pulse-2-max-smartwatch/p/itm5347ffc49e7cf",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/smartwatch/y/v/e/-original-imagm8b5yghhwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-WEAR-002",
+      "name": "Fastrack Limitless FS1 Pro 1.96'' AMOLED Smartwatch (Carbon Black)",
+      "description": "Fastrack Limitless FS1 Pro smartwatch with 1.96-inch curved AMOLED display, SingleSync Bluetooth calling, NitroFast quick charge, 110+ sports modes, carbon black.",
+      "category": "Wearables",
+      "price": 1999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/fastrack-limitless-fs1-pro-smartwatch/p/itmfc602",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/smartwatch/c/s/m/-original-imagp8b5yghhwhzt.jpeg"
+    },
+    {
+      "external_id": "FK-WEAR-003",
+      "name": "Fire-Boltt Ninja Call Pro Plus 1.83'' Smartwatch (Black)",
+      "description": "Fire-Boltt Ninja Call Pro Plus smartwatch with 1.83-inch HD display, Bluetooth calling with AI voice assistant, 100+ workout modes, health suite, black.",
+      "category": "Wearables",
+      "price": 1199.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/fire-boltt-ninja-call-pro-plus-smartwatch/p/itmfc603",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/smartwatch/k/g/s/-original-imagq9pfghhghwtz.jpeg"
+    },
+    {
+      "external_id": "FK-WAT-001",
+      "name": "Titan Karishma Analog Watch For Men (Black Dial / Silver Strap)",
+      "description": "Titan Karishma classic analog watch for men. Sleek round black dial, durable stainless steel silver strap, date display window, water resistant up to 30m.",
+      "category": "Watches",
+      "price": 2195.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/titan-karishma-analog-watch-men/p/itmfc701",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/watch/x/q/w/-original-imagthq48e78uuxr.jpeg"
+    },
+    {
+      "external_id": "FK-WAT-002",
+      "name": "Fastrack Casual Analog Watch For Men (Black Strap)",
+      "description": "Fastrack youth collection analog watch for men. Black round dial with high-contrast hands, comfortable black silicone strap, water resistant.",
+      "category": "Watches",
+      "price": 995.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/fastrack-casual-analog-watch-men/p/itmfc702",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/watch/7/m/m/-original-imagf8b5hghzhwzt.jpeg"
+    },
+    {
+      "external_id": "FK-FASH-001",
+      "name": "Allen Solly Men Regular Fit Solid Casual Shirt (Navy Blue)",
+      "description": "Allen Solly men's 100% premium cotton casual shirt. Spread collar, long sleeves, curved hem, navy blue solid pattern.",
+      "category": "Fashion",
+      "price": 1099.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/allen-solly-men-solid-casual-shirt/p/itmfc801",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/shirt/i/5/x/-original-imagg9vhgyzhhyzt.jpeg"
+    },
+    {
+      "external_id": "FK-FASH-002",
+      "name": "Levi's Men 511 Slim Fit Low Rise Jeans (Dark Indigo)",
+      "description": "Levi's 511 slim fit stretchable denim jeans for men. Low rise waist, zip fly with button closure, durable dark indigo blue wash.",
+      "category": "Fashion",
+      "price": 2299.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/levis-men-511-slim-fit-jeans/p/itmfc802",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/jean/m/y/q/-original-imags37kfhzt8h8s.jpeg"
+    },
+    {
+      "external_id": "FK-APP-001",
+      "name": "Prestige Iris 750W Mixer Grinder with 3 Stainless Steel Jars (White/Blue)",
+      "description": "Prestige Iris 750-watt heavy-duty mixer grinder. 3 stainless steel multipurpose jars (wet grinding, dry grinding, chutney) plus transparent juicer jar, 3 speed control.",
+      "category": "Appliances",
+      "price": 2999.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/prestige-iris-750w-mixer-grinder/p/itmfc901",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/mixer-grinder-juicer/b/d/u/-original-imaghvb5m7bkgfzg.jpeg"
+    },
+    {
+      "external_id": "FK-APP-002",
+      "name": "Philips Air Fryer HD9200/90 4.1 Litre Rapid Air Technology (Black)",
+      "description": "Philips essential air fryer with Rapid Air technology. 4.1L basket capacity, fry with up to 90% less fat, adjustable temperature and 60-minute timer, black.",
+      "category": "Appliances",
+      "price": 5499.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/philips-air-fryer-hd9200-90/p/itmfc902",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/air-fryer/z/f/i/-original-imagm9pfgzhzghwt.jpeg"
+    },
+    {
+      "external_id": "FK-APP-003",
+      "name": "Pigeon by Stovekraft Cruise 1800W Induction Cooktop (Black)",
+      "description": "Pigeon Cruise 1800W induction cooktop with 7 pre-set Indian cooking menus, LED display, auto shut-off, push button controls, crystal glass plate, black.",
+      "category": "Appliances",
+      "price": 1499.0,
+      "in_stock": true,
+      "url": "https://www.flipkart.com/pigeon-cruise-1800w-induction-cooktop/p/itmfc903",
+      "image_url": "https://rukminim2.flixcart.com/image/612/612/xif0q/induction-cook-top/j/y/s/-original-imagv9pfghhghwtz.jpeg"
+    }
+  ]
+}
