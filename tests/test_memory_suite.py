@@ -6,7 +6,8 @@ import json
 import uuid
 
 BASE_URL = "http://127.0.0.1:8000"
-STORE_KEY = "Lref8GVYiVxxZ4wehiudiZRlAcI5myX-QG48E4K33V0"
+import os
+STORE_KEY = os.environ["STORE_KEY"]
 
 def send_chat(session_id, conversation_id, message):
     res = requests.post(

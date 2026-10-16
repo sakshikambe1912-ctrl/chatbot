@@ -4,7 +4,7 @@
   window.__flipkartAssistantLoaded = true;
 
   var script = document.currentScript || document.querySelector('script[data-store-key]') || document.querySelector('script[src*="widget.js"]');
-  var storeKey = (script && script.getAttribute("data-store-key")) || "Lref8GVYiVxxZ4wehiudiZRlAcI5myX-QG48E4K33V0";
+  var storeKey = (script && script.getAttribute("data-store-key")) || " ";
   var apiBase = "http://127.0.0.1:8000";
   if (script && script.src) {
     try {

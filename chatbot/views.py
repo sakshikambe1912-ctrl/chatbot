@@ -10,13 +10,10 @@ from .services import (get_conversation, run_chat_full, resolve_conversation, ne
 
 
 def _store_from_request(request):
-    """Same store lookup as before (with the same fallback)."""
     raw_key = request.headers.get("X-Store-Key", "").strip()
-    store = Store.objects.filter(api_key=raw_key).first()
-    if not store:
-        # Fallback to Flipkart store if key not provided or invalid
-        store = Store.objects.filter(source_type="flipkart").first() or Store.objects.first()
-    return store
+    if not raw_key:
+        return None
+    return Store.objects.filter(api_key=raw_key).first()
 
 
 def _clip(value, n=64):
@@ -33,7 +30,7 @@ def chat(request):
 
     store = _store_from_request(request)
     if not store:
-        return Response({"error": "No store configured"}, status=500)
+        return Response({"error": "Invalid or missing store key"}, status=401)
 
     message = str(request.data.get("message", "")).strip()[:500]
     session_id = _clip(request.data.get("session_id"))
@@ -74,7 +71,7 @@ def history(request):
         return Response({})
     store = _store_from_request(request)
     if not store:
-        return Response({"error": "No store configured"}, status=500)
+        return Response({"error": "Invalid or missing store key"}, status=401)
 
     client_id = _clip(request.GET.get("session_id"))
     conversation_id = _clip(request.GET.get("conversation_id")) or None
@@ -100,7 +97,7 @@ def conversations(request):
         return Response({})
     store = _store_from_request(request)
     if not store:
-        return Response({"error": "No store configured"}, status=500)
+        return Response({"error": "Invalid or missing store key"}, status=401)
     client_id = _clip(request.GET.get("session_id"))
     if not client_id:
         return Response({"error": "session_id is required"}, status=400)
@@ -117,7 +114,7 @@ def conversation_new(request):
         return Response({})
     store = _store_from_request(request)
     if not store:
-        return Response({"error": "No store configured"}, status=500)
+        return Response({"error": "Invalid or missing store key"}, status=401)
     client_id = _clip(request.data.get("session_id"))
     if not client_id:
         return Response({"error": "session_id is required"}, status=400)
@@ -135,7 +132,7 @@ def conversation_reset(request):
         return Response({})
     store = _store_from_request(request)
     if not store:
-        return Response({"error": "No store configured"}, status=500)
+        return Response({"error": "Invalid or missing store key"}, status=401)
     client_id = _clip(request.data.get("session_id"))
     conversation_id = _clip(request.data.get("conversation_id")) or None
     if not client_id:
@@ -161,8 +158,13 @@ def conversation_reset(request):
 @permission_classes([AllowAny])
 def live_search(request):
     """Real-time product search endpoint that queries live Flipkart with strict relevance filtering."""
+    
     from catalog.connectors import FlipkartConnector
     from .services import is_product_relevant
+    store = _store_from_request(request)
+    if not store:
+        return Response({"error": "Invalid or missing store key"}, status=401)
+    query = request.GET.get("q", "").strip()
     query = request.GET.get("q", "").strip()
     if not query:
         return Response({"products": []})

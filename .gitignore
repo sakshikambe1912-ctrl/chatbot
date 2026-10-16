@@ -13,6 +13,7 @@ media/
 # Secrets
 .env
 .env.*
+!.env.example
 
 # Local database
 db.sqlite3
