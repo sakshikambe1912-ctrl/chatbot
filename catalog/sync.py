@@ -29,8 +29,9 @@ def sync_store(store):
             price_changes += 1
             PriceHistory.objects.create(product=product, price=product.price)
     try:
-        from .embeddings import embed_products
-        embed_products(store)
+        from ingestion.products import index_products
+        index_products(Product.objects.filter(store=store))
     except Exception as exc:
         print("EMBEDDING SKIPPED:", exc)
+
     return {"fetched": len(items), "new": created_count, "price_changes": price_changes}

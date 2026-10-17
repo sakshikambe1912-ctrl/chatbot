@@ -115,7 +115,7 @@ class ShopifySyncTests(TestCase):
         self.store = Store.objects.create(
             name="Shop", website_url="https://www.myshop.com", source_type="shopify",
             source_url="https://myshop.myshopify.com/products.json", currency="INR")
-        patcher = mock.patch("catalog.embeddings.embed_products")   # Ollama is not needed here
+        patcher = mock.patch("ingestion.products.index_products")  # Ollama is not needed here
         patcher.start()
         self.addCleanup(patcher.stop)
 

@@ -1,0 +1,35 @@
+{
+  "_help": "EDIT THIS FILE. doc = exact title of the document that answers the question (null = the documents cannot answer it). must = optional key facts; 'a|b' means a or b. Check titles and facts with: python tests\\eval_rag.py --docs",
+  "cases": [
+    {"q": "How do I return an item?", "doc": "Return and Refund Policy"},
+    {"q": "What is your return policy?", "doc": "Return and Refund Policy"},
+    {"q": "Can I send back something I bought?", "doc": "Return and Refund Policy"},
+    {"q": "How long do I have to return a product?", "doc": "Return and Refund Policy"},
+    {"q": "When will I get my refund?", "doc": "Return and Refund Policy"},
+    {"q": "Can I exchange an item for a different size?", "doc": "Return and Refund Policy"},
+    {"q": "What if my order arrives damaged?", "doc": "Return and Refund Policy"},
+
+    {"q": "How long does delivery take?", "doc": "Shipping and Delivery Policy"},
+    {"q": "What are the shipping charges?", "doc": "Shipping and Delivery Policy"},
+    {"q": "Is there free shipping?", "doc": "Shipping and Delivery Policy"},
+    {"q": "Can I track my parcel?", "doc": "Shipping and Delivery Policy"},
+    {"q": "Do you deliver to my pin code?", "doc": "Shipping and Delivery Policy"},
+
+    {"q": "Is there a warranty on products?", "doc": "Warranty Policy"},
+    {"q": "How long is the warranty?", "doc": "Warranty Policy"},
+    {"q": "What does the warranty not cover?", "doc": "Warranty Policy"},
+    {"q": "How do I claim warranty service?", "doc": "Warranty Policy"},
+
+    {"q": "Which payment methods do you accept?", "doc": "Frequently Asked Questions"},
+    {"q": "Is cash on delivery available?", "doc": "Frequently Asked Questions"},
+    {"q": "Can I get a GST invoice?", "doc": "Frequently Asked Questions"},
+    {"q": "How can I contact customer support?", "doc": "Frequently Asked Questions"},
+
+    {"q": "Do you sell gift cards?", "doc": null},
+    {"q": "Do you ship to Mars?", "doc": null},
+    {"q": "Can I pay with cryptocurrency?", "doc": null},
+    {"q": "What is the CEO's name?", "doc": null},
+    {"q": "Do you have a physical store in London?", "doc": null},
+    {"q": "xyzzy quantum toaster", "doc": null}
+  ]
+}

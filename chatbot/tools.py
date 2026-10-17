@@ -178,7 +178,7 @@ def search_loose(store, query, min_price=None, max_price=None, sort="relevance",
         scored.sort(key=lambda x: (-x[0], x[1].price))
     return [_to_card(store, p) for _, p in scored[:limit]]
 
-from catalog.embeddings import semantic_scores
+from ingestion.products import semantic_scores
 
 MIN_SIM = 0.62   # tune this in Step 8
 

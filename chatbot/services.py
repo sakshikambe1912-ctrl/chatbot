@@ -6,23 +6,25 @@ import re
 import uuid
 from collections import Counter
 
+
 import ollama
 from django.db import transaction
 from django.db.models import Q
 
 from catalog.models import Product
-from catalog.embeddings import semantic_scores
+from ingestion.products import index_products_async, semantic_scores
 from .models import Conversation, Message
 from .tools import (search_products, search_loose, get_categories, get_vocab,
                     correct_word, STOPWORDS, SYNONYMS, is_catalog_word)
-
+from ingestion.retrieval import retrieve_products
+from .rag import answer_with_rag, FOLLOWUP_RE
 # MIN_SIM lives in tools.py; fall back safely if it is missing there.
 try:
     from .tools import MIN_SIM
 except ImportError:
     MIN_SIM = 0.64
 
-MODEL = "qwen2.5:0.5b"
+MODEL = "qwen2.5:3b"
 
 CURRENCY_RE = re.compile(r"(?:[\$₹]|USD|INR|Rs\.?)\s?(\d[\d,]*(?:\.\d+)?)", re.I)
 
@@ -59,8 +61,10 @@ def llm(**kwargs):
     """The ONLY place that talks to the model. Swap this to change models."""
     client = ollama.Client(timeout=OLLAMA_TIMEOUT)
     opts = dict(kwargs.get("options") or {})
-    opts.setdefault("num_gpu", 0)
+    if os.environ.get("OLLAMA_NUM_GPU") is not None:      # force CPU with OLLAMA_NUM_GPU=0
+        opts.setdefault("num_gpu", int(os.environ["OLLAMA_NUM_GPU"]))
     kwargs["options"] = opts
+    kwargs.setdefault("keep_alive", "30m")                # keep the model loaded between chats
     try:
         return client.chat(model=MODEL, **kwargs)
     except Exception as exc:
@@ -843,6 +847,7 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
                                            min_price=kw.get("min_price"), max_price=kw.get("max_price"), category=cat)
                 ]
                 added = []
+                upserted = []
                 for li in filtered:
                     prod, _ = Product.objects.update_or_create(
                         store=store, external_id=li["external_id"],
@@ -856,8 +861,10 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
                             "image_url": li["image_url"],
                         }
                     )
+                    upserted.append(prod)
                     if prod.id not in exclude:
                         added.append(item(store, prod))
+                index_products_async(upserted)
 
                 if added:
                     if sort == "price_low":
@@ -869,52 +876,37 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
         except Exception as err:
             print("LIVE FLIPKART SCRAPE EXCEPTION:", err)
 
-    # 1) keyword search (names and categories)
-    found = []
-    attempts = [q]
-    if relax:
-        cw = " ".join(w for w in q.split() if fuzzy_catalog(store, w))
-        if cw and cw != q:
-            attempts.append(cw)
-    for a in attempts:
-        res = search_products(store, query=a or None, category=cat, sort=sort,
-                              in_stock_only=in_stock, limit=40, brand=brand, color=color, **kw)
-        res = [r for r in res if r["id"] not in exclude]
-        if res:
-            found = res
-            break
-
-    # 2) meaning scores: computed once, used for ranking
-    sims = {}
-    search_text = " ".join(x for x in (q, brand, color) if x)
+    # 1) hybrid retrieval: meaning (vectors) + exact words (full-text), merged with RRF.
+    #    Price, brand, category, colour and stock are applied in SQL.
+    results = []
+    ranks = {}
+    search_text = " ".join(x for x in (q, brand, color) if x) or (cat or "")
     if search_text:
         try:
-            sims = dict(semantic_scores(store, search_text, 0.0))
-        except Exception as exc:
-            print("SEMANTIC SCORES FAILED:", exc)
-
-    results = list(found)
-
-    # 3) keyword search found nothing: find products by meaning instead
-    if not results and search_text and sims:
-        ids = [pid for pid, s in sims.items() if s >= MIN_SIM]
-        if ids:
-            qs = Product.objects.filter(store=store, id__in=ids)
-            if cat:
-                qs = qs.filter(category__iexact=cat)
-            if brand:
-                qs = qs.filter(Q(name__icontains=brand) | Q(description__icontains=brand))
-            if color:
-                qs = qs.filter(Q(name__icontains=color) | Q(description__icontains=color))
-            if kw.get("min_price") is not None:
-                qs = qs.filter(price__gte=kw["min_price"])
-            if kw.get("max_price") is not None:
-                qs = qs.filter(price__lte=kw["max_price"])
-            if in_stock:
-                qs = qs.filter(in_stock=True)
-            results = [item(store, p) for p in qs if p.id not in exclude]
+            ids = retrieve_products(store, search_text, k=40, brand=brand, category=cat,
+                                    color=color, in_stock=in_stock, **kw)
+            by_id = Product.objects.in_bulk(ids)
+            results = [item(store, by_id[i]) for i in ids if i in by_id and i not in exclude]
+            ranks = {pid: n for n, pid in enumerate(ids)}
             if results:
-                print("SEMANTIC SEARCH matched")
+                print("HYBRID RETRIEVAL matched")
+        except Exception as exc:
+            print("HYBRID RETRIEVAL FAILED:", exc)
+
+    # 2) safety net: the old keyword search (also used when there is no text, e.g. only a price)
+    if not results:
+        attempts = [q]
+        if relax:
+            cw = " ".join(w for w in q.split() if fuzzy_catalog(store, w))
+            if cw and cw != q:
+                attempts.append(cw)
+        for a in attempts:
+            res = search_products(store, query=a or None, category=cat, sort=sort,
+                                  in_stock_only=in_stock, limit=40, brand=brand, color=color, **kw)
+            res = [r for r in res if r["id"] not in exclude]
+            if res:
+                results = res
+                break
 
     if not results and (q or brand or color):
         res = search_loose(store, q, sort=sort, in_stock_only=in_stock, limit=40,
@@ -934,8 +926,8 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
     elif sort == "price_high":
         results.sort(key=lambda r: -r["price"])
     else:
-        results.sort(key=lambda r: -sims.get(r["id"], 0))
-    print("SEARCH RESULTS:", [(r["name"], round(sims.get(r["id"], 0), 2)) for r in results[:5]])
+        results.sort(key=lambda r: ranks.get(r["id"], len(ranks)))   # keep retrieval order
+    print("SEARCH RESULTS:", [(r["name"], ranks.get(r["id"])) for r in results[:5]])
     return results[:limit]
 
 
@@ -1184,13 +1176,18 @@ def _core(store, convo, text):
     if is_code_request(t):
         return not_related_reply(store), []
 
-    # 3) Store policies, FAQs and customer assistance
+    # 3) Store policies, FAQs and customer assistance (answered from the ingested documents)
+    focus = None
+    if FOLLOWUP_RE.search(t) and (shown or st.get("focus")):
+        focus = pick_focus(store, st, t, shown)       # the product the customer is talking about
     if POLICY_RE.search(t):
-        return policy_reply(store, t), []
+        return answer_with_rag(store, t, product=focus), []
     if ORDER_RE.search(t):
-        return order_reply(store), []
+        if re.search(r"\b(return|refund|exchange|replacement|damaged|cancel)", t):
+            return answer_with_rag(store, t, fallback=order_reply(store), product=focus), []
+        return order_reply(store), []                 # order tracking needs account data, not documents
     if DISCOUNT_RE.search(t):
-        return discount_reply(store), []
+        return answer_with_rag(store, t, fallback=discount_reply(store)), []
     if HUMAN_RE.search(t):
         return human_support_reply(store), []
     if FRUSTRATED_RE.search(t):
