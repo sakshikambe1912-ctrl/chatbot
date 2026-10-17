@@ -1,7 +1,10 @@
+import logging
 from decimal import Decimal
 from .models import Product, PriceHistory
 from .connectors import CONNECTORS
 from .shopify_connector import ShopifyConnector
+
+log = logging.getLogger(__name__)
 
 CONNECTORS["shopify"] = ShopifyConnector
 
@@ -32,6 +35,6 @@ def sync_store(store):
         from ingestion.products import index_products
         index_products(Product.objects.filter(store=store))
     except Exception as exc:
-        print("EMBEDDING SKIPPED:", exc)
+        log.warning('EMBEDDING SKIPPED: %s', exc)
 
     return {"fetched": len(items), "new": created_count, "price_changes": price_changes}

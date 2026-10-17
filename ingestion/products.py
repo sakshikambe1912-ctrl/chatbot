@@ -1,3 +1,4 @@
+import logging
 import hashlib
 import threading
 
@@ -8,6 +9,9 @@ from catalog.models import Product
 
 from .models import Chunk
 from .pipeline import embed_batch
+from .retrieval import embed_query
+
+log = logging.getLogger(__name__)
 
 BATCH = 32
 _LOCK = threading.Lock()          # one background indexing job at a time
@@ -86,7 +90,7 @@ def index_products_async(products):
             with _LOCK:
                 index_products(Product.objects.filter(id__in=ids))
         except Exception as exc:
-            print("PRODUCT INDEXING FAILED:", exc)
+            log.warning('PRODUCT INDEXING FAILED: %s', exc)
         finally:
             close_old_connections()
 
@@ -96,7 +100,7 @@ def index_products_async(products):
 def semantic_scores(store, query, min_sim, limit=300):
     """[(product_id, similarity), ...] best first. Same return shape as the old
     function, but the search now runs inside Postgres."""
-    qv = embed_batch([query], "search_query: ")[0]
+    qv = embed_query(query)
     rows = (Chunk.objects.filter(store=store, product__isnull=False)
             .annotate(dist=CosineDistance("embedding", qv))
             .order_by("dist")

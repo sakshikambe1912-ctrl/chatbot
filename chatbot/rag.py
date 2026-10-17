@@ -1,6 +1,9 @@
+import logging
 import re
 
 from ingestion.retrieval import retrieve
+
+log = logging.getLogger(__name__)
 
 NO_INFO = ("I don't have that information in our store documents. "
            "Please check the 'Contact Us' page or ask our support team.")
@@ -83,7 +86,7 @@ def answer_with_sources(store, question, fallback=None, product=None, k=3):
     try:
         chunks = retrieve(store, query, k=k, only_docs=True)
     except Exception as exc:
-        print("RAG RETRIEVE FAILED:", exc)
+        log.warning('RAG RETRIEVE FAILED: %s', exc)
         return miss, []
     if not chunks:
         return miss, []                           # nothing relevant: do not guess
@@ -107,7 +110,7 @@ def answer_with_sources(store, question, fallback=None, product=None, k=3):
 
     allowed = context + " " + (product.name if product is not None else "")
     if not citations_ok(reply, len(chunks)) or not numbers_ok(reply, allowed):
-        print("RAG ANSWER REJECTED (bad citation or number):", reply)
+        log.warning('RAG ANSWER REJECTED (bad citation or number): %s', reply)
         return excerpt(chunks[0]), top
 
     cited = sorted({int(n) for n in CITE_RE.findall(reply)})

@@ -1,4 +1,7 @@
+import logging
 import requests
+
+log = logging.getLogger(__name__)
 
 
 class BaseConnector:
@@ -193,7 +196,7 @@ class FlipkartConnector(BaseConnector):
                     break
             return items
         except Exception as exc:
-            print("[FLIPKART LIVE SCRAPE ERROR]:", exc)
+            log.warning('[FLIPKART LIVE SCRAPE ERROR]: %s', exc)
             return []
 
 

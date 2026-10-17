@@ -160,4 +160,18 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'NUM_PROXIES': 0,
+}
+
+CHAT_RATE_IP = config("CHAT_RATE_IP", default="30/min")
+CHAT_RATE_SESSION = config("CHAT_RATE_SESSION", default="12/min")
+
+LOG_LEVEL = config("LOG_LEVEL", default="INFO")
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"std": {"format": "%(asctime)s %(levelname)s %(name)s: %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "std"}},
+    "loggers": {name: {"handlers": ["console"], "level": LOG_LEVEL, "propagate": False}
+                for name in ("chatbot", "catalog", "ingestion")},
 }

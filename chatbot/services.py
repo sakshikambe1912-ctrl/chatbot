@@ -708,7 +708,7 @@ def write_reply(system, user_text):
 
 
 def smalltalk_model(store, text):
-    print("SMALL TALK (model)")
+    log.info("SMALL TALK (model)")
     extra = ("The customer is making friendly conversation (a compliment, a feeling, a joke). "
              "Reply warmly in one or two short sentences and gently ask what they would like to "
              "find today. Do not mention any product or price.")
@@ -871,10 +871,10 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
                         added.sort(key=lambda r: r["price"])
                     elif sort == "price_high":
                         added.sort(key=lambda r: -r["price"])
-                    print(f"LIVE FLIPKART STRICT MATCH: {len(added)} items for '{query_str}'")
+                    log.info(f"LIVE FLIPKART STRICT MATCH: {len(added)} items for '{query_str}'")
                     return added[:limit]
         except Exception as err:
-            print("LIVE FLIPKART SCRAPE EXCEPTION:", err)
+            log.warning('LIVE FLIPKART SCRAPE EXCEPTION: %s', err)
 
     # 1) hybrid retrieval: meaning (vectors) + exact words (full-text), merged with RRF.
     #    Price, brand, category, colour and stock are applied in SQL.
@@ -889,9 +889,9 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
             results = [item(store, by_id[i]) for i in ids if i in by_id and i not in exclude]
             ranks = {pid: n for n, pid in enumerate(ids)}
             if results:
-                print("HYBRID RETRIEVAL matched")
+                log.info("HYBRID RETRIEVAL matched")
         except Exception as exc:
-            print("HYBRID RETRIEVAL FAILED:", exc)
+            log.warning('HYBRID RETRIEVAL FAILED: %s', exc)
 
     # 2) safety net: the old keyword search (also used when there is no text, e.g. only a price)
     if not results:
@@ -927,7 +927,7 @@ def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
         results.sort(key=lambda r: -r["price"])
     else:
         results.sort(key=lambda r: ranks.get(r["id"], len(ranks)))   # keep retrieval order
-    print("SEARCH RESULTS:", [(r["name"], ranks.get(r["id"])) for r in results[:5]])
+    log.info('SEARCH RESULTS: %s', [(r["name"], ranks.get(r["id"])) for r in results[:5]])
     return results[:limit]
 
 
@@ -1129,7 +1129,7 @@ def recommend(store, convo, st, shown, text):
 
 def use_case_search(store, convo, need_text, price, sort, text):
     cats = suggest_categories(store, need_text)
-    print("USE-CASE CATEGORIES:", cats)
+    log.info('USE-CASE CATEGORIES: %s', cats)
     if not cats:
         c = ", ".join(get_categories(store, 6))
         return (f"I couldn't match that to a specific product yet. Are you looking for something "
@@ -1230,7 +1230,7 @@ def _core(store, convo, text):
         state_norm.add(norm(str(st["category"]).lower()))
     overlap = any(norm(w) in state_norm for w in words)
     fresh = bool(cat_new) and not overlap and not PRONOUN_REF_RE.search(t)
-    print("SIGNALS:", {"price": price, "sort": sort, "words": words, "catalog": cat_new,
+    log.info('SIGNALS: %s', {"price": price, "sort": sort, "words": words, "catalog": cat_new,
                        "rel": rel, "more": more, "similar": similar,
                        "has_state": has_state, "fresh": fresh})
 
@@ -1270,7 +1270,7 @@ def _core(store, convo, text):
     # Unclear wording: let the model decide whether it continues the current search.
     if (not refine and has_state and not fresh and not cat_new and words and not signals):
         kind = followup_check(store, st, text)
-        print("FOLLOWUP CHECK:", kind)
+        log.info('FOLLOWUP CHECK: %s', kind)
         if kind == "followup":
             refine = True
         elif kind == "unclear":
@@ -1303,7 +1303,7 @@ def _core(store, convo, text):
         if similar and shown:
             eff["query"] = ""
             eff["category"] = (pick_focus(store, st, t, shown) or shown[0]).category
-        print("REFINE SEARCH:", eff, "exclude:", len(exclude))
+        log.info('REFINE SEARCH: %s %s %s', eff, "exclude:", len(exclude))
 
         results = run_search(store, eff, exclude=exclude, relax=False)
         if results:
@@ -1354,11 +1354,11 @@ def _core(store, convo, text):
                    "sort": sort or "relevance"}
         sem_results = run_search(store, sem_new)
         if sem_results:
-            print("NEW SEARCH (meaning):", sem_new)
+            log.info('NEW SEARCH (meaning): %s', sem_new)
             return present(store, convo, sem_new, sem_results, text, reco=bool(RECO_RE.search(t)))
 
         kind = classify(store, st, text)
-        print("CLASSIFIED:", kind)
+        log.info('CLASSIFIED: %s', kind)
         if kind == "chat":
             return smalltalk_model(store, text)
         if kind == "other":
@@ -1368,7 +1368,7 @@ def _core(store, convo, text):
     # Several different products in one message ("shoes and phones").
     groups = split_topics(store, t, price, sort)
     if groups:
-        print("MULTI TOPIC:", [g[0] for g in groups])
+        log.info('MULTI TOPIC: %s', [g[0] for g in groups])
         combined, seen_ids = [], set()
         for _, res in groups:
             for r in res:
@@ -1392,7 +1392,7 @@ def _core(store, convo, text):
     new = {"query": " ".join(words), "category": None, **price,
            "sort": sort or ("price_low" if rel == "cheaper" else
                             "price_high" if rel == "pricier" else "relevance")}
-    print("NEW SEARCH:", new)
+    log.info('NEW SEARCH: %s', new)
     results = run_search(store, new)
     if results:
         return present(store, convo, new, results, text, reco=bool(RECO_RE.search(t)))

@@ -1,3 +1,4 @@
+import logging
 import difflib
 import re
 from typing import List, Literal, Optional
@@ -7,6 +8,8 @@ from pydantic import BaseModel, Field
 from catalog.models import Product
 from . import services as S
 from .tools import get_categories, get_vocab, correct_word
+
+log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------
@@ -349,7 +352,7 @@ def understand(store, convo, st, shown, text):
     except S.ModelDown:
         raise
     except Exception as exc:
-        print("UNDERSTAND FAILED:", exc)
+        log.warning('UNDERSTAND FAILED: %s', exc)
         u = Understanding(intent="product_search", keywords=S.content_words(text))
     return validate(store, u, text, shown)
 
@@ -525,7 +528,7 @@ def search_flow(store, convo, st, u, text, shown, reco=False):
         sq = params(eff, cats[0] if cats else None)
         results = S.run_search(store, sq, exclude=exclude, relax=(op == "new_search"))
         terms = None
-    print("SEARCH:", op, sq, "exclude:", len(exclude))
+    log.info('SEARCH: %s %s %s %s', op, sq, "exclude:", len(exclude))
 
     if results:
         keep = dict(new)
@@ -799,7 +802,7 @@ def core(store, convo, text):
         return product_flow(store, convo, st, u_temp, text, shown)
 
     u = understand(store, convo, st, shown, text)
-    print("UNDERSTOOD:", u.model_dump(exclude_defaults=True))
+    log.info('UNDERSTOOD: %s', u.model_dump(exclude_defaults=True))
     intent = u.intent
 
     # Superlatives: "Which one is the cheapest?", "Which is the costliest?", "Which has the best rating?"

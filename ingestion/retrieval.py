@@ -1,5 +1,8 @@
+import hashlib
+import logging
 import re
 
+from django.core.cache import cache
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db.models import Q
 from pgvector.django import CosineDistance
@@ -7,7 +10,25 @@ from pgvector.django import CosineDistance
 from .models import Chunk
 from .pipeline import embed_batch
 
-FTS = "english"   # must match the config used in the GIN index
+log = logging.getLogger(__name__)
+
+FTS = "english"                 # must match the config used in the GIN index
+EMBED_CACHE_TTL = 60 * 60       # seconds a query embedding is remembered
+EMBED_CACHE_VERSION = "v1"      # change this when you switch the embedding model
+
+
+def embed_query(query):
+    """Embedding of a search query, remembered for an hour so a repeated question
+    does not call Ollama again. 'Black  Running Shoes' and 'black running shoes' share one entry."""
+    text = " ".join((query or "").lower().split())
+    key = "qemb:%s:%s" % (EMBED_CACHE_VERSION, hashlib.sha256(text.encode("utf-8")).hexdigest())
+    vec = cache.get(key)
+    if vec is None:
+        vec = embed_batch([query], "search_query: ")[0]
+        cache.set(key, vec, EMBED_CACHE_TTL)
+    else:
+        log.debug("query embedding cache hit")
+    return vec
 
 
 def rrf(lists, k=60):
@@ -39,7 +60,7 @@ def retrieve(store, query, k=5, min_sim=0.55, only_docs=False, extra=None):
     if extra is not None:
         base = base.filter(extra)
 
-    qv = embed_batch([query], "search_query: ")[0]
+    qv = embed_query(query)
     vec = [c for c in base.annotate(dist=CosineDistance("embedding", qv)).order_by("dist")[:30]
            if 1 - c.dist >= min_sim]
 

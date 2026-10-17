@@ -1,12 +1,16 @@
+import logging
 import traceback
 from urllib.parse import urlparse
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from .throttles import ChatIPThrottle, ChatSessionThrottle
 from catalog.models import Store
 from .services import (get_conversation, run_chat_full, resolve_conversation, new_conversation,
                        list_conversations, history_payload, cached_response)
+
+log = logging.getLogger(__name__)
 
 
 def _store_from_request(request):
@@ -24,6 +28,7 @@ def _clip(value, n=64):
 @api_view(["POST", "OPTIONS"])
 @authentication_classes([])
 @permission_classes([AllowAny])
+@throttle_classes([ChatIPThrottle, ChatSessionThrottle])
 def chat(request):
     if request.method == "OPTIONS":
         return Response({})
@@ -36,7 +41,7 @@ def chat(request):
     session_id = _clip(request.data.get("session_id"))
     conversation_id = _clip(request.data.get("conversation_id")) or None
     request_id = _clip(request.data.get("request_id")) or None
-    print(f"[CHAT API] Received: '{message}' (session: {session_id}, "
+    log.info(f"[CHAT API] Received: '{message}' (session: {session_id}, "
           f"conversation: {conversation_id}, store: {store.name})")
     if not message or not session_id:
         return Response({"error": "message and session_id are required"}, status=400)
@@ -176,7 +181,7 @@ def live_search(request):
         ]
         return Response({"products": filtered or items[:12], "query": query})
     except Exception as e:
-        print("[LIVE SEARCH ERROR]:", e)
+        log.warning('[LIVE SEARCH ERROR]: %s', e)
         return Response({"products": [], "error": str(e)}, status=500)
 
 

@@ -1,3 +1,4 @@
+import logging
 import re
 import time
 import difflib
@@ -180,6 +181,8 @@ def search_loose(store, query, min_price=None, max_price=None, sort="relevance",
 
 from ingestion.products import semantic_scores
 
+log = logging.getLogger(__name__)
+
 MIN_SIM = 0.62   # tune this in Step 8
 
 
@@ -188,7 +191,7 @@ def search_semantic(store, query, min_price=None, max_price=None, in_stock_only=
     try:
         scored = semantic_scores(store, query, MIN_SIM)
     except Exception as exc:
-        print("SEMANTIC FAILED:", exc)
+        log.warning('SEMANTIC FAILED: %s', exc)
         return []
     if not scored:
         return []
