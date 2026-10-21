@@ -53,13 +53,28 @@ def chat(request):
     if convo is None:
         convo = get_conversation(store, session_id)          # old behaviour as a last resort
 
+    # Detect if user is switching to a different product topic
+    # If so, automatically start a new conversation/tab, preserving previous chat in sidebar history
+    is_switch = False
+    old_convo_id = convo.session_id if convo else None
+    if convo and convo.messages.filter(role="assistant").exists():
+        from .services import detect_product_switch
+        if detect_product_switch(store, convo, message):
+            log.info(f"[CHAT API] Product switch detected from conversation {convo.session_id} for '{message}'. Starting new conversation.")
+            convo = new_conversation(store, session_id)
+            is_switch = True
+
     # A retried request (same request_id) gets the saved answer instead of a second one.
     cached = cached_response(convo, request_id)
     if cached:
         return Response(cached)
 
     try:
-        return Response(run_chat_full(store, convo, message, request_id=request_id))
+        data = run_chat_full(store, convo, message, request_id=request_id)
+        if is_switch:
+            data["new_conversation"] = True
+            data["previous_conversation_id"] = old_convo_id
+        return Response(data)
     except Exception:
         traceback.print_exc()
         return Response({"error": "The assistant is unavailable. Please try again."},
@@ -87,9 +102,12 @@ def history(request):
     if convo is None and conversation_id:
         convo = resolve_conversation(store, client_id, None, create=False)
     if convo is None:
-        return Response({"conversation_id": None, "messages": []})
-    return Response({"conversation_id": convo.session_id,
-                     "messages": history_payload(store, convo)})
+        return Response({"conversation_id": None, "title": "New chat", "messages": []})
+    return Response({
+        "conversation_id": convo.session_id,
+        "title": convo.title or (convo.preferences or {}).get("title") or "New chat",
+        "messages": history_payload(store, convo)
+    })
 
 
 @csrf_exempt
@@ -124,7 +142,7 @@ def conversation_new(request):
     if not client_id:
         return Response({"error": "session_id is required"}, status=400)
     convo = new_conversation(store, client_id)
-    return Response({"conversation_id": convo.session_id})
+    return Response({"conversation_id": convo.session_id, "title": "New chat"})
 
 
 @csrf_exempt
@@ -147,8 +165,8 @@ def conversation_reset(request):
         convo = resolve_conversation(store, client_id, None, create=False)
     if not convo:
         return Response({"error": "Conversation not found"}, status=404)
-    from .services import save_state
-    save_state(convo, {}, [])
+    from .services import clear_active_memory
+    clear_active_memory(convo)
     return Response({
         "ok": True,
         "conversation_id": convo.session_id,

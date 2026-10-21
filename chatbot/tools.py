@@ -79,7 +79,10 @@ def _match(word):
     return q
 
 def _to_card(store, p):
-    return {
+    brand_val = (getattr(p, "brand", "") or "").strip()
+    if not brand_val and getattr(p, "attributes", None) and isinstance(p.attributes, dict):
+        brand_val = str(p.attributes.get("brand", "")).strip()
+    card = {
         "id": p.id,
         "name": p.name,
         "price": float(p.price),
@@ -90,6 +93,10 @@ def _to_card(store, p):
         "image": p.image_url,
         "updated": p.updated_at.isoformat(),
     }
+    if brand_val:
+        card["brand"] = brand_val
+    return card
+
 
 
 def search_products(store, query=None, category=None, min_price=None,

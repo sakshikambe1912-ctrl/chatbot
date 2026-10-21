@@ -1,3 +1,4 @@
+import json
 import logging
 import difflib
 import re
@@ -80,7 +81,17 @@ FIELDS = ("keywords", "categories", "brand", "color", "min_price", "max_price", 
 
 
 def recent_messages(convo, n=4):
-    rows = list(convo.messages.order_by("-id")[:n + 1])[::-1]
+    qs = convo.messages.all()
+    reset_at = (convo.preferences or {}).get("reset_at")
+    if reset_at:
+        try:
+            from django.utils.dateparse import parse_datetime
+            dt = parse_datetime(reset_at)
+            if dt:
+                qs = qs.filter(created_at__gt=dt)
+        except Exception:
+            pass
+    rows = list(qs.order_by("-id")[:n + 1])[::-1]
     if rows and rows[-1].role == "user":
         rows = rows[:-1]                       # drop the message being processed
     return "\n".join(f"{m.role}: {m.content[:200]}" for m in rows[-n:]) or "none"
@@ -577,6 +588,9 @@ def resolve_referenced_product(store, st, text, shown, refs=None, ref_query=None
     - Active conversation focus product
     """
     if not shown:
+        fid = st.get("focus")
+        if fid:
+            return Product.objects.filter(store=store, id=fid).first()
         return None
     t = (text or "").lower()
 
@@ -638,7 +652,7 @@ def resolve_referenced_product(store, st, text, shown, refs=None, ref_query=None
 
 def handle_superlative(store, convo, st, shown, text, u):
     t = text.lower()
-    is_cheapest = bool(getattr(u, "superlative_target", "none") in ("cheapest", "best_value") or re.search(r"\b(cheapest|lowest\s+price|least\s+expensive|most\s+affordable|sasta)\b", t))
+    is_cheapest = bool(getattr(u, "superlative_target", "none") in ("cheapest", "best_value") or re.search(r"\b(cheapest|lowest\s+price|least\s+expensive|most\s+affordable|sasta)\b", t) or re.search(r"\bwhich\s+(?:one\s+)?is\s+cheaper\b", t))
     is_priciest = bool(getattr(u, "superlative_target", "none") == "costliest" or re.search(r"\b(most\s+expensive|costliest|priciest|highest\s+price|premium)\b", t))
 
     if not shown:
@@ -653,13 +667,23 @@ def handle_superlative(store, convo, st, shown, text, u):
     if is_cheapest:
         cheapest = min(shown, key=lambda p: p.price)
         st["focus"] = cheapest.id
+        st["focus_name"] = cheapest.name
         S.save_state(convo, st)
-        return (f"The cheapest option among these results is {cheapest.name} for {S.fmt_price(cheapest.price, store.currency)}.", [S.item(store, cheapest)])
+        S.save_active_context(convo, {"product_id": cheapest.id, "product_name": cheapest.name, "topic": getattr(cheapest, "category", "") or "product", "task": "compare"})
+        if len(shown) >= 2:
+            others = [p for p in shown if p.id != cheapest.id]
+            comp_bits = ", ".join(f"{p.name} ({S.fmt_price(p.price, store.currency)})" for p in others[:2])
+            reply = f"{cheapest.name} is the cheaper option at {S.fmt_price(cheapest.price, store.currency)} (compared to {comp_bits})."
+        else:
+            reply = f"The cheapest option among these results is {cheapest.name} for {S.fmt_price(cheapest.price, store.currency)}."
+        return (reply, [S.item(store, cheapest)])
 
     if is_priciest:
         priciest = max(shown, key=lambda p: p.price)
         st["focus"] = priciest.id
+        st["focus_name"] = priciest.name
         S.save_state(convo, st)
+        S.save_active_context(convo, {"product_id": priciest.id, "product_name": priciest.name, "topic": getattr(priciest, "category", "") or "product", "task": "compare"})
         return (f"The most premium option among these results is {priciest.name} for {S.fmt_price(priciest.price, store.currency)}.", [S.item(store, priciest)])
 
     # General recommendation or best value among shown
@@ -751,39 +775,69 @@ def core(store, convo, text):
     t = text.lower().replace("’", "'").strip()
     shown = S.get_shown(store, convo)
 
-    # Fast paths for catalog discovery, store policies, orders, discounts, support, greetings
-    if S.DISCOVERY_RE.search(t):
-        return S.discovery_reply(store), []
-    if S.POLICY_RE.search(t):
-        return S.policy_reply(store, t), []
-    if S.ORDER_RE.search(t):
-        return S.order_reply(store), []
-    if S.DISCOUNT_RE.search(t):
-        return S.discount_reply(store), []
-    if S.HUMAN_RE.search(t):
-        return S.human_support_reply(store), []
-    if S.HELP_RE.search(t):
-        return S.help_reply(store, t), []
+    # 1. Reset / Start new conversation: clear active memory, keep messages
+    if S.RESET_RE.search(t):
+        S.clear_active_memory(convo)
+        return "Okay, I've cleared the active product context. What would you like to search for now?", []
+
+    # 2. Out of scope / code requests: politely explain chatbot scope
+    if OUT_OF_SCOPE_RE.search(t) or S.is_code_request(t):
+        return S.not_related_reply(store), []
+
+    # 3. Friendly greetings and pleasantries
     canned = S.smalltalk_reply(store, t)
     if canned:
         return canned, []
 
-    # Fast deterministic paths: instant response for clear intents without waiting for LLM
-    if S.RESET_RE.search(t):
-        S.save_state(convo, {}, [])
-        return "Okay, I've cleared our shopping context. What would you like to look for now?", []
+    # 4. Customer corrections (e.g. "No, I meant Campus shoes", "Actually Campus")
+    if S.is_correction(t) and (st.get("category") or st.get("keywords") or st.get("brand") or shown):
+        return S.handle_correction(store, convo, st, text, shown)
 
-    if OUT_OF_SCOPE_RE.search(t) or S.is_code_request(t):
-        return S.not_related_reply(store), []
+    # 5. Policy & Warranty Inquiries: distinguish product-specific questions from general store policies
+    is_warranty = bool(re.search(r"\b(warranty|guarantee)\b", t))
+    is_return = bool(re.search(r"\b(return|returns|refund|refunds|exchange|can i return|returnable)\b", t))
+    is_shipping = bool(re.search(r"\b(shipping|delivery charges?|delivery date|when will it arrive|free shipping)\b", t))
+    is_policy_q = is_warranty or is_return or is_shipping or bool(S.POLICY_RE.search(t))
 
+    if is_policy_q:
+        is_explicit_general = bool(re.search(r"\b(what is (?:your|the) (?:return|refund|warranty|shipping) policy|store policy|your policies|return policy|warranty policy)\b", t) and not any(w in t for w in ("these", "this", "it", "its")))
+        ord_refs = S.ordinal_refs(t, len(shown) if shown else 10)
+        has_pronoun = bool(S.PRONOUN_REF_RE.search(t) or any(w in t for w in ("these", "this", "it", "its", "the product", "this product", "these shoes", "this phone", "this laptop")))
+
+        if not is_explicit_general and (has_pronoun or ord_refs or st.get("focus") or len(shown) == 1):
+            p = resolve_referenced_product(store, st, text, shown, refs=ord_refs)
+            if p:
+                policy_kind = "warranty" if is_warranty else ("return" if is_return else ("shipping" if is_shipping else "general"))
+                return S.handle_product_policy_inquiry(store, convo, p, text, policy_type=policy_kind)
+            elif len(shown) > 1 and (has_pronoun or ord_refs):
+                names = [f"'{p.name}'" for p in shown[:3]]
+                return f"Which product are you asking about: {', '.join(names[:-1])} or {names[-1]}?", []
+
+        return S.handle_general_policy_inquiry(store, text)
+
+    # 6. Customer support, discounts, help, catalog discovery
+    if S.ORDER_RE.search(t):
+        return S.order_reply(store), []
+    if S.HUMAN_RE.search(t):
+        return S.human_support_reply(store), []
+    if S.DISCOUNT_RE.search(t):
+        return S.discount_reply(store), []
+    if S.HELP_RE.search(t):
+        return S.help_reply(store, t), []
+    if S.DISCOVERY_RE.search(t):
+        return S.discovery_reply(store), []
+
+    # 7. Availability check: returns ONLY the asked product
     if AVAIL_RE.search(t):
         u_temp = Understanding(intent="availability", refs=S.ordinal_refs(t, len(shown) if shown else 10))
         return handle_availability(store, convo, st, shown, text, u_temp)
 
-    if CHEAPEST_RE.search(t) or re.search(r"\b(which\s+(?:is\s+)?(?:the\s+)?(?:most\s+expensive|costliest|priciest))\b", t):
-        u_temp = Understanding(intent="superlative", superlative_target="cheapest" if CHEAPEST_RE.search(t) else "costliest")
+    # 8. Superlatives & "Which one is cheaper?"
+    if CHEAPEST_RE.search(t) or re.search(r"\b(which\s+(?:is\s+)?(?:the\s+)?(?:most\s+expensive|costliest|priciest))\b", t) or re.search(r"\bwhich\s+(?:one\s+)?is\s+cheaper\b", t):
+        u_temp = Understanding(intent="superlative", superlative_target="cheapest" if (CHEAPEST_RE.search(t) or "cheaper" in t) else "costliest")
         return handle_superlative(store, convo, st, shown, text, u_temp)
 
+    # 9. Go back
     if GO_BACK_RE.search(t):
         u_temp = Understanding(intent="go_back")
         return handle_go_back(store, convo, st, shown, text, u_temp)

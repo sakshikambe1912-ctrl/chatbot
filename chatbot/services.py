@@ -188,8 +188,98 @@ def history_payload(store, convo, limit=200):
 
 
 # =====================================================================
-# Active shopping state (belongs to ONE conversation only)
+# Three Types of Memory:
+# 1. Conversation History (convo.messages)
+# 2. Active Context (product focus, topic, task, comparisons)
+# 3. Search State (filters, search results, seen/rejected)
 # =====================================================================
+
+def get_active_context(convo):
+    """Stores the currently relevant product, topic, or task."""
+    prefs = convo.preferences or {}
+    ctx = prefs.get("active_context")
+    if isinstance(ctx, dict) and ctx:
+        return ctx
+    st = prefs.get("state") or {}
+    return {
+        "product_id": st.get("focus"),
+        "product_name": st.get("focus_name"),
+        "topic": st.get("category") or st.get("query") or "",
+        "task": st.get("task") or "browse",
+        "comparison_ids": list(st.get("comparison_ids") or [])
+    }
+
+
+def save_active_context(convo, ctx):
+    """Persist active context into conversation preferences."""
+    prefs = dict(convo.preferences or {})
+    prefs["active_context"] = ctx
+    st = dict(prefs.get("state") or {})
+    if ctx.get("product_id") is not None:
+        st["focus"] = ctx["product_id"]
+    if ctx.get("product_name"):
+        st["focus_name"] = ctx["product_name"]
+    if ctx.get("topic"):
+        st["category"] = ctx["topic"]
+    prefs["state"] = st
+    convo.preferences = prefs
+    convo.save(update_fields=["preferences"])
+
+
+def get_search_state(convo):
+    """Stores current search filters, selected products, and search results."""
+    prefs = convo.preferences or {}
+    sst = prefs.get("search_state")
+    if isinstance(sst, dict) and sst:
+        return sst
+    st = prefs.get("state") or {}
+    return {
+        "keywords": st.get("keywords") or st.get("query") or "",
+        "categories": list(st.get("categories") or ([st["category"]] if st.get("category") else [])),
+        "brand": st.get("brand"),
+        "color": st.get("color"),
+        "min_price": st.get("min_price"),
+        "max_price": st.get("max_price"),
+        "sort": st.get("sort"),
+        "seen": list(st.get("seen") or []),
+        "rejected": list(st.get("rejected") or [])
+    }
+
+
+def save_search_state(convo, sst, ids=None):
+    """Persist search state into conversation preferences and last_shown_ids."""
+    prefs = dict(convo.preferences or {})
+    prefs["search_state"] = sst
+    st = dict(prefs.get("state") or {})
+    st.update(sst)
+    prefs["state"] = st
+    convo.preferences = prefs
+    fields = ["preferences"]
+    if ids is not None:
+        convo.last_shown_ids = ids
+        fields.append("last_shown_ids")
+    convo.save(update_fields=fields)
+
+
+def clear_active_memory(convo):
+    """
+    Reset action:
+    - Clears active product context
+    - Clears search filters and comparison state
+    - Clears temporary follow-up references
+    - Preserves visible chat history
+    - Records reset_at so cleared context is never reconstructed from old messages
+    """
+    from django.utils import timezone
+    prefs = dict(convo.preferences or {})
+    prefs["active_context"] = {}
+    prefs["search_state"] = {}
+    prefs["state"] = {}
+    prefs["reset_at"] = timezone.now().isoformat()
+    convo.preferences = prefs
+    convo.last_shown_ids = []
+    convo.save(update_fields=["preferences", "last_shown_ids"])
+
 
 def get_state(convo):
     st = (convo.preferences or {}).get("state")
@@ -199,6 +289,27 @@ def get_state(convo):
 def save_state(convo, st, ids=None):
     prefs = dict(convo.preferences or {})
     prefs["state"] = st
+    # Keep active_context and search_state synchronized
+    sst = {
+        "keywords": st.get("keywords") or st.get("query") or "",
+        "categories": list(st.get("categories") or ([st["category"]] if st.get("category") else [])),
+        "brand": st.get("brand"),
+        "color": st.get("color"),
+        "min_price": st.get("min_price"),
+        "max_price": st.get("max_price"),
+        "sort": st.get("sort"),
+        "seen": list(st.get("seen") or []),
+        "rejected": list(st.get("rejected") or [])
+    }
+    prefs["search_state"] = sst
+    act = dict(prefs.get("active_context") or {})
+    if st.get("focus"):
+        act["product_id"] = st["focus"]
+    if st.get("focus_name"):
+        act["product_name"] = st["focus_name"]
+    if st.get("category") or sst["categories"]:
+        act["topic"] = st.get("category") or (sst["categories"][0] if sst["categories"] else "")
+    prefs["active_context"] = act
     convo.preferences = prefs
     fields = ["preferences"]
     if ids is not None:
@@ -220,8 +331,17 @@ def item(store, p, full=False):
     d = {"id": p.id, "name": p.name, "price": float(p.price), "currency": store.currency,
          "category": p.category, "in_stock": p.in_stock, "url": prod_url,
          "image": p.image_url, "updated": p.updated_at.isoformat()}
-    if getattr(p, "brand", None):
-        d["brand"] = p.brand
+    brand_val = (getattr(p, "brand", "") or "").strip()
+    if not brand_val and getattr(p, "attributes", None) and isinstance(p.attributes, dict):
+        brand_val = str(p.attributes.get("brand", "")).strip()
+    if not brand_val and p.name:
+        for b in KNOWN_BRANDS:
+            if re.search(rf"\b{re.escape(b)}\b", p.name, re.I):
+                brand_val = b.title()
+                break
+    if brand_val:
+        d["brand"] = brand_val
+
     if full:
         d["description"] = (p.description or "")[:500]
         if getattr(p, "attributes", None):
@@ -549,6 +669,107 @@ def policy_reply(store, text=""):
             f"and an easy 7-day return policy. What can I help you find today?")
 
 
+def handle_general_policy_inquiry(store, text=""):
+    """
+    Retrieves the general store policy using RAG store documents (returns, warranty, shipping, payments).
+    Does NOT return product cards.
+    """
+    from .rag import answer_with_rag, NO_INFO
+    try:
+        rag_ans = answer_with_rag(store, text, product=None)
+        if rag_ans and rag_ans != NO_INFO:
+            return rag_ans, []
+    except Exception as exc:
+        log.warning("General policy RAG failed: %s", exc)
+    return policy_reply(store, text), []
+
+
+def handle_product_policy_inquiry(store, convo, p, text="", policy_type="general"):
+    """
+    Resolves product-specific policy questions (warranty, return eligibility, shipping)
+    grounded on store RAG documents and the specific product's attributes.
+    Returns (reply, [item(store, p)]) — ONLY the product asked about, no unnecessary products or links.
+    """
+    from .rag import answer_with_rag, NO_INFO
+    t = (text or "").lower()
+
+    # 1. Warranty inquiry
+    if policy_type == "warranty" or re.search(r"\b(warranty|guarantee)\b", t):
+        attr_warranty = ""
+        if getattr(p, "attributes", None) and isinstance(p.attributes, dict):
+            for k in ("warranty", "warranty_period", "guarantee"):
+                if p.attributes.get(k):
+                    attr_warranty = str(p.attributes[k])
+                    break
+        if not attr_warranty and p.description and "warranty" in p.description.lower():
+            m = re.search(r"(\d+\s*(?:year|month|yr|mo)s?\s*(?:brand|manufacturer)?\s*warranty)", p.description, re.I)
+            if m:
+                attr_warranty = m.group(1)
+
+        try:
+            rag_ans = answer_with_rag(store, f"What is the warranty policy for {p.name}?", product=p)
+        except Exception:
+            rag_ans = None
+
+        if rag_ans and rag_ans != NO_INFO:
+            reply = rag_ans
+            if attr_warranty and attr_warranty not in reply:
+                reply = f"{p.name} comes with {attr_warranty}. {reply}"
+        elif attr_warranty:
+            reply = f"{p.name} comes with {attr_warranty}. It covers manufacturing defects with original invoice."
+        else:
+            reply = (f"{p.name} is covered under standard manufacturer warranty against manufacturing defects. "
+                     f"Please retain your Flipkart invoice to claim warranty at authorized service centers.")
+
+        st = get_state(convo)
+        st["focus"] = p.id
+        st["focus_name"] = p.name
+        save_state(convo, st)
+        save_active_context(convo, {"product_id": p.id, "product_name": p.name, "topic": p.category or "product", "task": "warranty"})
+        return reply, [item(store, p)]
+
+    # 2. Return inquiry
+    if policy_type == "return" or re.search(r"\b(return|refund|exchange|can i return|returnable)\b", t):
+        try:
+            rag_ans = answer_with_rag(store, f"Can I return {p.name}?", product=p)
+        except Exception:
+            rag_ans = None
+
+        if rag_ans and rag_ans != NO_INFO:
+            reply = rag_ans
+        else:
+            cat = (p.category or "").lower()
+            days = "15 days" if any(w in cat for w in ("shoe", "fashion", "cloth", "apparel")) else "7 days"
+            reply = (f"Yes, {p.name} is eligible for return within {days} of delivery as long as it is in original, "
+                     f"unworn/unused condition with all packaging and tags intact. You can initiate the return from your Orders page.")
+
+        st = get_state(convo)
+        st["focus"] = p.id
+        st["focus_name"] = p.name
+        save_state(convo, st)
+        save_active_context(convo, {"product_id": p.id, "product_name": p.name, "topic": p.category or "product", "task": "returns"})
+        return reply, [item(store, p)]
+
+    # 3. Shipping / delivery inquiry
+    if policy_type == "shipping" or re.search(r"\b(delivery|shipping|charge|free shipping|when will it arrive)\b", t):
+        free_qual = float(p.price) >= 500
+        free_txt = "qualifies for FREE delivery" if free_qual else "standard delivery charge applies"
+        reply = (f"{p.name} is priced at {fmt_price(p.price, store.currency)} and {free_txt}. "
+                 f"Standard shipping typically takes 3 to 5 business days with live courier tracking.")
+        st = get_state(convo)
+        st["focus"] = p.id
+        st["focus_name"] = p.name
+        save_state(convo, st)
+        save_active_context(convo, {"product_id": p.id, "product_name": p.name, "topic": p.category or "product", "task": "shipping"})
+        return reply, [item(store, p)]
+
+    try:
+        rag_ans = answer_with_rag(store, text, product=p)
+    except Exception:
+        rag_ans = None
+    return (rag_ans if rag_ans and rag_ans != NO_INFO else policy_reply(store, text)), [item(store, p)]
+
+
 def discount_reply(store):
     return (f"We regularly feature sales, seasonal promotions, and discount deals on our {store.name} homepage. "
             f"If you have a promo coupon code, you can apply it at checkout for an instant discount!")
@@ -738,48 +959,48 @@ ACCESSORY_WORDS = [
 ]
 
 CATEGORY_NOUNS = {
-    "shoes": ["shoe", "shoes", "sneaker", "sneakers", "running", "walking", "sports", "footwear", "clog", "sandals", "slides", "loafers", "boots"],
-    "shoe": ["shoe", "shoes", "sneaker", "sneakers", "running", "walking", "sports", "footwear", "clog", "sandals", "slides", "loafers", "boots"],
+    "shoes": ["shoe", "shoes", "sneaker", "sneakers", "running", "walking", "sports", "footwear", "clog", "clogs", "sandals", "slides", "loafers", "boots", "boot", "heels", "slippers", "slipper"],
+    "shoe": ["shoe", "shoes", "sneaker", "sneakers", "running", "walking", "sports", "footwear", "clog", "clogs", "sandals", "slides", "loafers", "boots", "boot", "heels", "slippers", "slipper"],
     "sneakers": ["shoe", "shoes", "sneaker", "sneakers"],
-    "laptops": ["laptop", "laptops", "notebook", "vivobook", "zenbook", "thinkpad", "ideapad", "macbook", "inspiron", "pavilion", "yoga"],
-    "laptop": ["laptop", "laptops", "notebook", "vivobook", "zenbook", "thinkpad", "ideapad", "macbook", "inspiron", "pavilion", "yoga"],
-    "tv": ["tv", "television", "bravia", "oled", "qled", "smart tv", "led tv"],
-    "tvs": ["tv", "television", "bravia", "oled", "qled", "smart tv", "led tv"],
-    "television": ["tv", "television", "bravia", "oled", "qled", "smart tv", "led tv"],
-    "phone": ["phone", "smartphone", "mobile", "iphone", "5g", "4g", "galaxy"],
-    "phones": ["phone", "smartphone", "mobile", "iphone", "5g", "4g", "galaxy"],
-    "mobile": ["phone", "smartphone", "mobile", "iphone", "5g", "4g", "galaxy"],
-    "mobiles": ["phone", "smartphone", "mobile", "iphone", "5g", "4g", "galaxy"],
-    "smartwatch": ["watch", "smartwatch"],
-    "watch": ["watch", "smartwatch"],
-    "watches": ["watch", "smartwatch"],
-    "headphone": ["headphone", "headphones", "earphone", "earphones", "earbuds", "airpods", "neckband", "tws", "buds"],
-    "headphones": ["headphone", "headphones", "earphone", "earphones", "earbuds", "airpods", "neckband", "tws", "buds"],
-    "earphones": ["headphone", "headphones", "earphone", "earphones", "earbuds", "airpods", "neckband", "tws", "buds"],
-    "earphone": ["headphone", "headphones", "earphone", "earphones", "earbuds", "airpods", "neckband", "tws", "buds"],
-    "earbuds": ["headphone", "headphones", "earphone", "earphones", "earbuds", "airpods", "neckband", "tws", "buds"],
-    "refrigerator": ["refrigerator", "fridge"],
-    "fridge": ["refrigerator", "fridge"],
-    "refrigerators": ["refrigerator", "fridge"],
-    "washing machine": ["washing machine", "washer"],
-    "microwave": ["microwave", "oven"],
-    "air conditioner": ["air conditioner", "ac", "split ac", "inverter ac"],
-    "t-shirt": ["t-shirt", "tshirt", "tee"],
-    "t-shirts": ["t-shirt", "tshirt", "tees", "tee"],
+    "laptops": ["laptop", "laptops", "notebook", "notebooks", "vivobook", "zenbook", "thinkpad", "ideapad", "macbook", "inspiron", "pavilion", "yoga", "chromebook"],
+    "laptop": ["laptop", "laptops", "notebook", "notebooks", "vivobook", "zenbook", "thinkpad", "ideapad", "macbook", "inspiron", "pavilion", "yoga", "chromebook"],
+    "tv": ["tv", "tvs", "television", "televisions", "bravia", "oled", "qled", "smart tv", "led tv"],
+    "tvs": ["tv", "tvs", "television", "televisions", "bravia", "oled", "qled", "smart tv", "led tv"],
+    "television": ["tv", "tvs", "television", "televisions", "bravia", "oled", "qled", "smart tv", "led tv"],
+    "phone": ["phone", "phones", "smartphone", "smartphones", "mobile", "mobiles", "iphone", "iphones", "5g", "4g", "galaxy", "pixel", "handset", "handsets"],
+    "phones": ["phone", "phones", "smartphone", "smartphones", "mobile", "mobiles", "iphone", "iphones", "5g", "4g", "galaxy", "pixel", "handset", "handsets"],
+    "mobile": ["phone", "phones", "smartphone", "smartphones", "mobile", "mobiles", "iphone", "iphones", "5g", "4g", "galaxy", "pixel", "handset", "handsets"],
+    "mobiles": ["phone", "phones", "smartphone", "smartphones", "mobile", "mobiles", "iphone", "iphones", "5g", "4g", "galaxy", "pixel", "handset", "handsets"],
+    "smartwatch": ["watch", "watches", "smartwatch", "smartwatches"],
+    "watch": ["watch", "watches", "smartwatch", "smartwatches"],
+    "watches": ["watch", "watches", "smartwatch", "smartwatches"],
+    "headphone": ["headphone", "headphones", "earphone", "earphones", "earbuds", "earbud", "airpods", "neckband", "neckbands", "tws", "buds", "speaker", "speakers", "soundbar", "soundbars"],
+    "headphones": ["headphone", "headphones", "earphone", "earphones", "earbuds", "earbud", "airpods", "neckband", "neckbands", "tws", "buds", "speaker", "speakers", "soundbar", "soundbars"],
+    "earphones": ["headphone", "headphones", "earphone", "earphones", "earbuds", "earbud", "airpods", "neckband", "neckbands", "tws", "buds", "speaker", "speakers", "soundbar", "soundbars"],
+    "earphone": ["headphone", "headphones", "earphone", "earphones", "earbuds", "earbud", "airpods", "neckband", "neckbands", "tws", "buds", "speaker", "speakers", "soundbar", "soundbars"],
+    "earbuds": ["headphone", "headphones", "earphone", "earphones", "earbuds", "earbud", "airpods", "neckband", "neckbands", "tws", "buds", "speaker", "speakers", "soundbar", "soundbars"],
+    "refrigerator": ["refrigerator", "refrigerators", "fridge", "fridges"],
+    "fridge": ["refrigerator", "refrigerators", "fridge", "fridges"],
+    "refrigerators": ["refrigerator", "refrigerators", "fridge", "fridges"],
+    "washing machine": ["washing machine", "washing machines", "washer", "washers"],
+    "microwave": ["microwave", "microwaves", "oven", "ovens"],
+    "air conditioner": ["air conditioner", "air conditioners", "ac", "split ac", "inverter ac"],
+    "t-shirt": ["t-shirt", "t-shirts", "tshirt", "tshirts", "tee", "tees"],
+    "t-shirts": ["t-shirt", "t-shirts", "tshirt", "tshirts", "tees", "tee"],
     "shirt": ["shirt", "shirts"],
     "shirts": ["shirt", "shirts"],
     "jeans": ["jean", "jeans", "denim"],
-    "sofa": ["sofa", "couch", "recliner"],
-    "camera": ["camera", "dslr", "mirrorless"],
-    "perfume": ["perfume", "fragrance", "deodorant", "cologne", "body spray"],
-    "sunglasses": ["sunglasses", "shades", "aviator", "wayfarer"],
-    "speaker": ["speaker", "soundbar", "bluetooth speaker"],
-    "soundbar": ["soundbar", "speaker", "audio"],
+    "sofa": ["sofa", "sofas", "couch", "couches", "recliner", "recliners"],
+    "camera": ["camera", "cameras", "dslr", "mirrorless"],
+    "perfume": ["perfume", "perfumes", "fragrance", "fragrances", "deodorant", "deodorants", "cologne", "body spray"],
+    "sunglasses": ["sunglasses", "shades", "aviator", "aviators", "wayfarer", "wayfarers"],
+    "speaker": ["speaker", "speakers", "soundbar", "soundbars", "bluetooth speaker"],
+    "soundbar": ["soundbar", "soundbars", "speaker", "speakers", "audio"],
 }
 
 
 def is_product_relevant(name, price, q="", brand=None, color=None, min_price=None, max_price=None, category=None):
-    n = name.lower()
+    n = f"{name} {category or ''}".lower()
     full_text = f"{q or ''} {category or ''}".lower()
 
     # 1. Price check
@@ -814,12 +1035,206 @@ def is_product_relevant(name, price, q="", brand=None, color=None, min_price=Non
 
     # 5. Core category noun check
     for noun, valid_matches in CATEGORY_NOUNS.items():
-        if re.search(rf"\b{noun}\b", full_text):
-            if not any(re.search(rf"\b{re.escape(v)}\b", n) for v in valid_matches):
+        if re.search(rf"\b{noun}(?:s|es)?\b", full_text):
+            if not any(re.search(rf"\b{re.escape(v)}(?:s|es)?\b", n) for v in valid_matches):
                 return False
             break
 
     return True
+
+
+COMMON_COLORS = [
+    "black", "white", "blue", "red", "green", "grey", "gray", "yellow",
+    "pink", "purple", "orange", "brown", "gold", "silver"
+]
+
+FOLLOWUP_PRONOUNS_RE = re.compile(
+    r"\b(it|its|this|these|those|them|this one|that one|the first|the second|the third|the last|"
+    r"first one|second one|third one|last one|the 1st|the 2nd|the 3rd|the previous|earlier one)\b",
+    re.I
+)
+
+FOLLOWUP_PRICE_RE = re.compile(
+    r"\b(cheaper|costlier|pricier|less expensive|more expensive|lower price|higher price|under|below|above|upto|budget)\b",
+    re.I
+)
+
+FOLLOWUP_QUESTIONS_RE = re.compile(
+    r"\b(warranty|guarantee|return|returns|refund|refunds|exchange|in stock|available|availability|"
+    r"specs?|specifications?|details?|features?|delivery|shipping|cod|cash on delivery|price of|how much|"
+    r"which is cheaper|which one is cheaper|compare|difference between)\b",
+    re.I
+)
+
+CORRECTION_RE = re.compile(
+    r"\b(no,? (?:i )?meant|actually|not (?:that|those|them)|instead of|i meant|i wanted to say)\b",
+    re.I
+)
+
+
+def identify_product_family(text):
+    """Maps text to a normalized product family (shoes, phones, laptops, tv, audio, etc.)."""
+    t = (text or "").lower()
+    for family, words in CATEGORY_NOUNS.items():
+        if any(re.search(rf"\b{re.escape(w)}(?:s|es)?\b", t) for w in words):
+            if family in ("shoes", "shoe", "sneakers"):
+                return "shoes"
+            if family in ("laptop", "laptops"):
+                return "laptops"
+            if family in ("tv", "tvs", "television"):
+                return "tv"
+            if family in ("phone", "phones", "mobile", "mobiles"):
+                return "phones"
+            if family in ("smartwatch", "watch", "watches"):
+                return "watches"
+            if family in ("headphone", "headphones", "earphone", "earphones", "earbuds", "speaker", "soundbar"):
+                return "audio"
+            if family in ("refrigerator", "fridge", "refrigerators", "washing machine", "microwave", "air conditioner"):
+                return "appliances"
+            if family in ("t-shirt", "t-shirts", "shirt", "shirts", "jeans", "sofa"):
+                return "lifestyle"
+            return family
+    return None
+
+
+def is_product_followup_or_refine(text):
+    """Returns True if the message is a refinement or question about the active product context."""
+    t = (text or "").lower()
+    if FOLLOWUP_PRONOUNS_RE.search(t):
+        return True
+    if FOLLOWUP_PRICE_RE.search(t):
+        return True
+    if FOLLOWUP_QUESTIONS_RE.search(t):
+        return True
+    if any(re.search(rf"\b{c}\b", t) for c in COMMON_COLORS):
+        return True
+    if MORE_RE.search(t) or SIMILAR_RE.search(t):
+        return True
+    return False
+
+
+def is_correction(text):
+    """Returns True if the customer is correcting a previous statement."""
+    return bool(CORRECTION_RE.search(text or ""))
+
+
+def detect_product_switch(store, convo, message):
+    """
+    Detects if the customer is switching to a DIFFERENT product / category
+    from what was previously being discussed in this conversation.
+    If True, the system starts a new conversation / tab, saving the earlier chat in the sidebar.
+    """
+    if not convo or not convo.pk:
+        return False
+    # If the conversation has no assistant messages yet, this is the very first query, not a switch
+    if not convo.messages.filter(role="assistant").exists():
+        return False
+
+    t = (message or "").strip().lower()
+    if not t:
+        return False
+
+    # Smalltalk, help, reset, acknowledgments stay in current conversation
+    if is_smalltalk(t) or ACK_WORDS.intersection(set(t.split())) or HELP_RE.search(t) or RESET_RE.search(t):
+        return False
+
+    # Corrections stay in current conversation
+    if is_correction(t):
+        return False
+
+    # Follow-ups, price refinements, warranty, return, availability inquiries stay in current conversation
+    if is_product_followup_or_refine(t):
+        return False
+
+    # Check active state and context
+    st = get_state(convo)
+    ctx = get_active_context(convo)
+
+    current_topic = ctx.get("topic") or ""
+    current_cats = st.get("categories") or ([st["category"]] if st.get("category") else [])
+    current_kw = st.get("keywords") or st.get("query") or ""
+    current_brand = st.get("brand") or ""
+    current_prod_name = ctx.get("product_name") or ""
+
+    prior_blob = f"{current_topic} {' '.join(current_cats)} {current_kw} {current_brand} {current_prod_name}".strip()
+    if not prior_blob and not convo.last_shown_ids:
+        # No prior product search occurred in this conversation
+        return False
+
+    curr_family = identify_product_family(prior_blob)
+    new_family = identify_product_family(t)
+
+    # If both families exist and are different (e.g. shoes vs phones, laptops vs tv):
+    if curr_family and new_family and curr_family != new_family:
+        return True
+
+    # Check category nouns directly
+    curr_nouns = {noun for noun, words in CATEGORY_NOUNS.items()
+                  if any(re.search(rf"\b{re.escape(w)}(?:s|es)?\b", prior_blob.lower()) for w in words)}
+    new_nouns = {noun for noun, words in CATEGORY_NOUNS.items()
+                 if any(re.search(rf"\b{re.escape(w)}(?:s|es)?\b", t) for w in words)}
+    if curr_nouns and new_nouns and not (curr_nouns & new_nouns):
+        return True
+
+    return False
+
+
+
+def handle_correction(store, convo, st, text, shown=()):
+    """
+    Handles customer corrections (e.g., 'No, I meant Campus shoes'):
+    Replaces conflicting values (e.g. brand Nike -> Campus) while preserving active category & price filters.
+    """
+    t = text.lower()
+    cleaned = CORRECTION_RE.sub("", t).strip()
+
+    new_brand = None
+    for b in KNOWN_BRANDS:
+        if re.search(rf"\b{re.escape(b)}\b", cleaned):
+            new_brand = b.title()
+            break
+
+    p_price = parse_price(cleaned)
+    new_color = None
+    for c in COMMON_COLORS:
+        if re.search(rf"\b{c}\b", cleaned):
+            new_color = c
+            break
+
+    old_cat = st.get("category") or (st.get("categories")[0] if st.get("categories") else None)
+    old_kw = st.get("keywords") or st.get("query") or ""
+    if st.get("brand"):
+        old_kw = " ".join(w for w in old_kw.split() if w.lower() != st["brand"].lower())
+
+    corrected_kw = " ".join(content_words(cleaned))
+    if not corrected_kw:
+        corrected_kw = old_kw
+
+    new_st = {
+        "query": corrected_kw,
+        "keywords": corrected_kw,
+        "category": old_cat,
+        "categories": [old_cat] if old_cat else [],
+        "brand": new_brand or st.get("brand"),
+        "color": new_color or st.get("color"),
+        "min_price": p_price.get("min_price", st.get("min_price")),
+        "max_price": p_price.get("max_price", st.get("max_price")),
+        "sort": parse_sort(cleaned) or st.get("sort") or "relevance",
+    }
+
+    results = run_search(store, new_st)
+    if results:
+        save_state(convo, new_st, [r["id"] for r in results])
+        save_active_context(convo, {
+            "product_id": results[0]["id"] if len(results) == 1 else None,
+            "product_name": results[0]["name"] if len(results) == 1 else None,
+            "topic": old_cat or corrected_kw,
+            "task": "browse"
+        })
+        return present(store, convo, new_st, results, text)
+
+    save_state(convo, new_st, [])
+    return finish_none(store, convo, new_st, cleaned)
 
 
 def run_search(store, st, exclude=(), in_stock=True, limit=5, relax=True):
@@ -981,12 +1396,16 @@ def split_topics(store, t, price, sort):
 
 
 def present(store, convo, st, results, text, keep_seen=False, reco=False, terms=None):
-    ids = [r["id"] for r in results]
+    # Limit display results to top 3 products to prevent unnecessary products and links
+    display_results = results[:3] if len(results) > 3 and not terms else results
+    ids = [r["id"] for r in display_results]
     st = dict(st)
     st["seen"] = (st.get("seen", []) if keep_seen else []) + ids
-    prices = [r["price"] for r in results]
+    prices = [r["price"] for r in display_results]
     st["lowest"], st["highest"] = min(prices), max(prices)
     st["focus"] = ids[0] if len(ids) == 1 else None
+    if len(ids) == 1:
+        st["focus_name"] = display_results[0]["name"]
     if terms:
         st["multi"], st["terms"] = True, terms
     else:
@@ -996,7 +1415,17 @@ def present(store, convo, st, results, text, keep_seen=False, reco=False, terms=
     st.pop("offer", None)
     save_state(convo, st, ids)
 
-    slim = [{k: r[k] for k in ("name", "price", "currency", "category", "in_stock")} for r in results]
+    # Save active context
+    topic = st.get("category") or st.get("query") or (display_results[0].get("category") if display_results else "")
+    save_active_context(convo, {
+        "product_id": st.get("focus"),
+        "product_name": st.get("focus_name"),
+        "topic": topic,
+        "task": "browse",
+        "comparison_ids": ids if len(ids) <= 3 else ids[:2]
+    })
+
+    slim = [{k: r[k] for k in ("name", "price", "currency", "category", "in_stock")} for r in display_results]
     goal = ("Recommend one or two of these products and explain the criteria you used (price, "
             "stock and details in the data). Say when information is missing. "
             if reco else
@@ -1005,9 +1434,9 @@ def present(store, convo, st, results, text, keep_seen=False, reco=False, terms=
     extra = ("Search results for the customer's latest message (exact store data): "
              + json.dumps(slim) + f". Filters applied: {describe_filters(store, st)}. " + goal)
     reply = write_reply(chat_system(store, extra), text)
-    if not reply or not prices_ok(reply, results):
-        reply = fallback_text(results)
-    return reply, results
+    if not reply or not prices_ok(reply, display_results):
+        reply = fallback_text(display_results)
+    return reply, display_results
 
 
 def explain_none(store, st, label):

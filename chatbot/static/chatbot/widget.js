@@ -37,6 +37,20 @@
     } catch (e) {}
   }
 
+  // Open conversation tabs: [{ id: cid, title: "..." }]
+  var openTabs = [];
+  try {
+    var storedTabs = localStorage.getItem("chat_open_tabs");
+    if (storedTabs) openTabs = JSON.parse(storedTabs);
+  } catch (e) { openTabs = []; }
+  if (!Array.isArray(openTabs)) openTabs = [];
+
+  function saveTabs() {
+    try {
+      localStorage.setItem("chat_open_tabs", JSON.stringify(openTabs));
+    } catch (e) {}
+  }
+
   function setOpenFlag(v) {
     try { localStorage.setItem("chat_open", v ? "1" : "0"); } catch (e) {}
   }
@@ -113,6 +127,86 @@
 
   var main = el("div", "flex:1;display:flex;flex-direction:column;min-width:0");
 
+  // Tabs Bar
+  var tabsBar = el("div", "display:flex;align-items:center;background:#eef2f6;border-bottom:1px solid #cbd5e1;padding:6px 10px;gap:6px;overflow-x:auto;scrollbar-width:none;flex-shrink:0", "", "fk-chat-tabs-bar");
+  var tabList = el("div", "display:flex;align-items:center;gap:6px;flex:1;overflow-x:auto;scrollbar-width:none");
+  var addTabBtn = el("button", "width:24px;height:24px;border-radius:6px;border:1px dashed #94a3b8;background:#fff;color:#2874f0;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1", "+");
+  addTabBtn.title = "Start a new conversation";
+  addTabBtn.onclick = function() { startNewChat(); };
+  tabsBar.appendChild(tabList);
+  tabsBar.appendChild(addTabBtn);
+
+  function addOrFocusTab(id, title) {
+    if (!id) return;
+    var existing = openTabs.find(function(t) { return t.id === id; });
+    if (existing) {
+      if (title && title !== "New chat") existing.title = title;
+    } else {
+      openTabs.push({ id: id, title: title || "New chat" });
+    }
+    setCid(id);
+    saveTabs();
+    renderTabs();
+  }
+
+  function updateTabTitle(id, title) {
+    if (!id || !title) return;
+    var existing = openTabs.find(function(t) { return t.id === id; });
+    if (existing) {
+      existing.title = title;
+      saveTabs();
+      renderTabs();
+    }
+  }
+
+  function closeTab(idToClose, e) {
+    if (e) e.stopPropagation();
+    openTabs = openTabs.filter(function(t) { return t.id !== idToClose; });
+    saveTabs();
+    if (cid === idToClose) {
+      if (openTabs.length > 0) {
+        var nextTab = openTabs[openTabs.length - 1];
+        loadConversation(nextTab.id);
+      } else {
+        startNewChat();
+      }
+    } else {
+      renderTabs();
+    }
+  }
+
+  function renderTabs() {
+    tabList.innerHTML = "";
+    if (cid && !openTabs.some(function(t) { return t.id === cid; })) {
+      openTabs.push({ id: cid, title: "Chat" });
+      saveTabs();
+    }
+    openTabs.forEach(function(t) {
+      var isActive = (t.id === cid);
+      var tabEl = el("div", "display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px 6px 0 0;font-size:11.5px;cursor:pointer;max-width:140px;white-space:nowrap;transition:all .15s ease;" +
+        (isActive
+          ? "background:#fff;color:#2874f0;font-weight:700;border:1px solid #cbd5e1;border-bottom:2px solid #2874f0;box-shadow:0 1px 2px rgba(0,0,0,0.05);"
+          : "background:#e2e8f0;color:#475569;font-weight:500;border:1px solid transparent;"));
+
+      var titleSpan = el("span", "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;", t.title || "Chat");
+      tabEl.appendChild(titleSpan);
+
+      var closeX = el("span", "font-size:10px;color:#94a3b8;padding:1px 3px;border-radius:50%;cursor:pointer;line-height:1;", "✕");
+      closeX.title = "Close tab";
+      closeX.onmouseenter = function() { closeX.style.color = "#dc2626"; };
+      closeX.onmouseleave = function() { closeX.style.color = "#94a3b8"; };
+      closeX.onclick = function(e) { closeTab(t.id, e); };
+      tabEl.appendChild(closeX);
+
+      tabEl.onclick = function() {
+        if (t.id !== cid && !send.disabled) {
+          loadConversation(t.id);
+        }
+      };
+      tabList.appendChild(tabEl);
+    });
+  }
+
   // Message list
   var list = el("div", "flex:1;overflow-y:auto;padding:14px;font-size:13px;line-height:1.5;background:#f8f9fa", "", "fk-chat-list");
 
@@ -140,6 +234,7 @@
   var send = el("button", "border:0;background:#2874f0;color:#fff;padding:0 16px;border-radius:20px;margin-left:8px;cursor:pointer;font-weight:600;font-size:13px", "Send", "fk-chat-send");
   row.appendChild(input); row.appendChild(send);
 
+  main.appendChild(tabsBar);
   main.appendChild(list);
   main.appendChild(row);
   body.appendChild(sidebar);
@@ -313,6 +408,7 @@
     it.onclick = function () {
       if (send.disabled || c.id === cid) { closeDrawer(); return; }
       closeDrawer();
+      addOrFocusTab(c.id, c.title);
       loadConversation(c.id);
     };
     return it;
@@ -324,12 +420,14 @@
               (wantedCid ? "&conversation_id=" + encodeURIComponent(wantedCid) : "");
     return api(url).then(function (d) {
       setCid(d.conversation_id);
+      addOrFocusTab(d.conversation_id, d.title || "Chat");
       if (d.messages && d.messages.length) renderHistory(d.messages);
       else renderWelcome();
     }).catch(function (err) {
       console.error("[Flipkart Assistant] could not load history:", err);
       renderWelcome();
     }).then(function () {
+      renderTabs();
       return refreshSidebar();
     });
   }
@@ -343,8 +441,10 @@
       body: JSON.stringify({ session_id: sid })
     }).then(function (d) {
       setCid(d.conversation_id);
+      addOrFocusTab(d.conversation_id, "New chat");
       renderWelcome();
       refreshSidebar();
+      renderTabs();
       input.focus();
     }).catch(function (err) {
       console.error("[Flipkart Assistant] new chat failed:", err);
@@ -403,12 +503,31 @@
       }
       return r.json();
     }).then(function (d) {
+      var isSwitch = Boolean(d.new_conversation || (cid && d.conversation_id && d.conversation_id !== cid));
       if (d.conversation_id) setCid(d.conversation_id);
-      wait.textContent = d.reply || d.error || "Sorry, something went wrong.";
-      if (d.products && d.products.length) {
-        addCards(d.products);
+
+      if (isSwitch) {
+        // Customer switched products: start new conversation tab, preserve earlier chat in sidebar history
+        var newTitle = d.title || (text.length > 25 ? text.slice(0, 25) + "..." : text);
+        addOrFocusTab(d.conversation_id, newTitle);
+        list.innerHTML = "";
+        addMsg(text, true);
+        var replyMsg = addMsg(d.reply || d.error || "Here are matching products:", false);
+        if (d.products && d.products.length) {
+          addCards(d.products);
+        }
+      } else {
+        // Continuing same chat on this page
+        wait.textContent = d.reply || d.error || "Sorry, something went wrong.";
+        if (d.products && d.products.length) {
+          addCards(d.products);
+        }
+        if (d.title) {
+          updateTabTitle(cid, d.title);
+        }
       }
-      refreshSidebar();                  // the chat's title appears after its first message
+      renderTabs();
+      refreshSidebar();                  // update history in sidebar
     }).catch(function (err) {
       console.error("[Flipkart Assistant Error]:", err);
       wait.textContent = "Unable to connect: " + (err.message || "Please check if Django server is running.");
